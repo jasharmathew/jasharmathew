@@ -1,0 +1,2854 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Quiz App</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background: #f4f4f4;
+		}
+
+		.container {
+			max-width: 500px;
+			margin: 40px auto;
+			background: #fff;
+			padding: 30px;
+			border-radius: 8px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+
+		h1 {
+			text-align: center;
+		}
+
+		.question-count {
+			font-size: 1em;
+			color: #888;
+			margin-bottom: 10px;
+			text-align: center;
+		}
+
+		.answer-row {
+			display: flex;
+			gap: 8px;
+			margin-bottom: 10px;
+		}
+
+		.answer-input {
+			flex: 1;
+			padding: 10px;
+			font-size: 1em;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+
+		.btn {
+			padding: 10px 18px;
+			font-size: 1em;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			background: #007bff;
+			color: #fff;
+			transition: background 0.2s;
+		}
+
+			.btn:disabled {
+				background: #b0b0b0;
+				cursor: not-allowed;
+			}
+
+		.btn-group {
+			display: flex;
+			gap: 8px;
+			justify-content: center;
+			margin-bottom: 10px;
+		}
+
+		.result {
+			font-size: 1.1em;
+			margin-top: 20px;
+			font-weight: bold;
+			text-align: center;
+			min-height: 1.5em;
+		}
+
+		#micStatus {
+			margin-left: 8px;
+			font-size: 1.2em;
+			vertical-align: middle;
+		}
+
+		#buzzBtn.buzzed {
+			background: #28a745;
+		}
+
+		#buzzBtn {
+			transition: background 0.2s;
+		}
+
+		#timerDisplay {
+			font-weight: bold;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1 id="mainTitle">Welcome to North Georgia Church of God Bible Quiz Practice</h1>
+		<div id="nameScreen">
+			<input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off">
+			<button class="btn" id="submitName" type="button">Start Quiz</button>
+		</div>
+		<div id="quizScreen" style="display:none;">
+			<div class="question-count" id="questionCount"></div>
+			<div class="btn-group">
+				<button class="btn" id="buzzBtn" style="background:#ff416c;">🚨 Buzz!</button>
+				<span id="timerDisplay" style="font-size:1.1em; color:#d9534f;"></span>
+			</div>
+			<div class="answer-row">
+				<input type="text" class="answer-input" id="answerInput" placeholder="Type or speak your answer..." autocomplete="off" disabled>
+				<button class="btn" id="recordBtn" title="Speak your answer" disabled>🎤</button>
+				<span id="micStatus"></span>
+			</div>
+			<div class="btn-group">
+				<button class="btn" id="submitAnswer" disabled>Submit</button>
+			</div>
+			<div class="result" id="result"></div>
+		</div>
+		<div id="scoreScreen" style="display:none;">
+			<h2>Quiz Complete!</h2>
+			<div id="scoreResult"></div>
+			<button class="btn" id="restartBtn">Start Over</button>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+
+			const questions = [
+				{
+					"question": "According to 1 Corinthians 3:16-17, we are the temple of God, and the Spirit of God dwells in you.",
+					"answer": "God; Spirit of God dwells",
+					"points": 20
+				},
+				{
+					"question": "According to Ephesians 4:11, what is the five-fold ministry?",
+					"answer": "Apostles, prophets, evangelists, pastors, teachers",
+					"points": 20
+				},
+				{
+					"question": "According to John 19:30, what were Jesus’s last words on the cross?",
+					"answer": "“It is finished”",
+					"points": 10
+				},
+				{
+					"question": "According to Luke 10:5, what were the servants of Jesus to say first upon entering a house?",
+					"answer": "“Peace to this house”",
+					"points": 10
+				},
+				{
+					"question": "According to Luke 13:8-9, what was the response of the keeper of the vineyard about the fig tree that had not borne fruit?",
+					"answer": "“But he answered and said to him, ‘Sir, let it alone this year also, until I dig around it and fertilize it. And if it bears fruit, well. But if not, after that you can cut it down.’ ”",
+					"points": 30
+				},
+				{
+					"question": "According to Mark 10:27, with God all things are __",
+					"answer": "Possible",
+					"points": 10
+				},
+				{
+					"question": "According to Matthew 5:6, who shall be filled?",
+					"answer": "“…those who hunger and thirst for righteousness…”",
+					"points": 10
+				},
+				{
+					"question": "According to Matthew 5:8, who shall see God?",
+					"answer": "“…the pure in heart…”",
+					"points": 10
+				},
+				{
+					"question": "According to Romans 6:23, what are the wages of sin?",
+					"answer": "Death",
+					"points": 10
+				},
+				{
+					"question": "According to Romans 6:23, what is the gift of God?",
+					"answer": "Eternal life in Christ Jesus our Lord",
+					"points": 20
+				},
+				{
+					"question": "According to the book of Matthew, name the first two disciples whom Jesus called to follow Him?",
+					"answer": "Peter and Andrew",
+					"points": 10
+				},
+				{
+					"question": "As affirmed by the first General Assembly in their refusal to be considered a legislative body, the Church of God holds what as the sole basis for God’s law?",
+					"answer": "The Bible",
+					"points": 10
+				},
+				{
+					"question": "By what name is Machpelah more commonly known?",
+					"answer": "The Tomb of the Matriarchs and Patriarchs",
+					"points": 10
+				},
+				{
+					"question": "By what title was Jesus often called?",
+					"answer": "“Teacher” or “Rabbi”",
+					"points": 10
+				},
+				{
+					"question": "From what tribe of Israel was Anna?",
+					"answer": "The tribe of Asher",
+					"points": 10
+				},
+				{
+					"question": "From what tribe of Israel was David?",
+					"answer": "Judah",
+					"points": 10
+				},
+				{
+					"question": "From what tribe of Israel was Jesus?",
+					"answer": "The tribe of Judah",
+					"points": 10
+				},
+				{
+					"question": "From what tribe of Israel was Saul?",
+					"answer": "Benjamin",
+					"points": 10
+				},
+				{
+					"question": "From what tribe of Israel was the cohanim (priesthood)?",
+					"answer": "Levi",
+					"points": 10
+				},
+				{
+					"question": "From what two words is the name Jerusalem derived?",
+					"answer": "Jireh and Shalom",
+					"points": 10
+				},
+				{
+					"question": "From where did Jonah board a ship to run from his call to Nineveh?",
+					"answer": "Joppa",
+					"points": 10
+				},
+				{
+					"question": "From where was David returning when he stopped at Ziklag in II Samuel chapter one verse one?",
+					"answer": "From the slaughter of the Amalekites",
+					"points": 20
+				},
+				{
+					"question": "How did Abner depart from David at Hebron?",
+					"answer": "“So David sent Abner away, and he went in peace.”",
+					"points": 20
+				},
+				{
+					"question": "How did Amnon and Jonadab conspire to get Tamar alone?",
+					"answer": "Amnon pretended to be sick and she was sent by the king to nurse Amnon at Amnon’s request",
+					"points": 20
+				},
+				{
+					"question": "How did Asahel pursue Abner?",
+					"answer": "“So Asahel pursued Abner, and in going he did not turn to the right hand or to the left from following Abner.”",
+					"points": 30
+				},
+				{
+					"question": "How did David attempt to get Uriah to go home?",
+					"answer": "He got him drunk, but still Uriah would not go down to his house",
+					"points": 20
+				},
+				{
+					"question": "How did David bring the ark of the covenant to Jerusalem?",
+					"answer": "“So David went and brought up the ark of God from the house of Obed-Edom to the City of David with gladness. And so it was, when those bearing the ark of the LORD had gone six paces, that he sacrificed oxen and fatted sheep. Then David danced before the LORD with all his might; and David was wearing a linen ephod. So David and all the house of Israel brought up the ark of the LORD with shouting and with the sound of the\ntrumpet.”",
+					"points": 30
+				},
+				{
+					"question": "How did David claim the Lord would repay the evildoer?",
+					"answer": "“The LORD shall repay the evildoer according to his wickedness.”",
+					"points": 20
+				},
+				{
+					"question": "How did David intercede for his child in II Samuel chapter twelve?",
+					"answer": "“David therefore pleaded with God for the child, and David fasted and went in and lay all night on the ground. So the elders of his house arose and went to him, to raise him up from the ground. But he would not, nor did he eat food with them.”",
+					"points": 30
+				},
+				{
+					"question": "How did David make his decision to confront the Philistines in II Samuel chapter five?",
+					"answer": "By inquiring of the Lord",
+					"points": 10
+				},
+				{
+					"question": "How did David make his decision to go up to the cities of Judah?",
+					"answer": "By inquiring of the Lord",
+					"points": 20
+				},
+				{
+					"question": "How did David make his decision to order the death of Uriah?",
+					"answer": "Independently and in sin",
+					"points": 10
+				},
+				{
+					"question": "How did David rule according to II Samuel chapter eight?",
+					"answer": "“So David reigned over all Israel; and David administered judgment and justice to all his people.”",
+					"points": 20
+				},
+				{
+					"question": "How did David seek the reason for the famine?",
+					"answer": "He inquired of the Lord",
+					"points": 10
+				},
+				{
+					"question": "How did Ishbosheth feel about Abner?",
+					"answer": "He feared him.",
+					"points": 10
+				},
+				{
+					"question": "How did Jesus appear to Peter and the others in John 21?",
+					"answer": "He made them breakfast on the shore",
+					"points": 20
+				},
+				{
+					"question": "How did Jesus defeat the devil in the wilderness?",
+					"answer": "By reciting the Word of God",
+					"points": 10
+				},
+				{
+					"question": "How did Jesus enter Jerusalem at His triumphal entry?",
+					"answer": "Upon a donkey and her colt",
+					"points": 10
+				},
+				{
+					"question": "How did Joab approach David about the subject of Absalom?",
+					"answer": "Joab sent a wise woman of Tekoa before the king to tell a story about her two sons",
+					"points": 20
+				},
+				{
+					"question": "How did Mephibosheth mourn David’s absence from Jerusalem?",
+					"answer": "“And he had not cared for his feet, nor trimmed his mustache, nor washed his clothes, from the day the king departed until the day he returned in peace.”",
+					"points": 20
+				},
+				{
+					"question": "How did Nathan approach David to reprove him for his sin?",
+					"answer": "With a story of a rich man and a poor man",
+					"points": 10
+				},
+				{
+					"question": "How is the baby born to David by Bathsheba described in II Samuel 12:15?",
+					"answer": "“the child that Uriah’s wife bore to David”",
+					"points": 20
+				},
+				{
+					"question": "How long did Absalom dwell in Jerusalem without seeing the king’s face?",
+					"answer": "Two full years",
+					"points": 10
+				},
+				{
+					"question": "How long did David reign as king in total?",
+					"answer": "Forty years",
+					"points": 10
+				},
+				{
+					"question": "How long did David rule from Hebron?",
+					"answer": "Seven years and six months",
+					"points": 10
+				},
+				{
+					"question": "How long did David rule from Jerusalem?",
+					"answer": "Thirty-three years",
+					"points": 10
+				},
+				{
+					"question": "How long did Jesus fast in the wilderness?",
+					"answer": "40 days and nights",
+					"points": 10
+				},
+				{
+					"question": "How long did the ark remain at the house of Obed-Edom?",
+					"answer": "Three months",
+					"points": 10
+				},
+				{
+					"question": "How long did the census of Israel and Judah take to conduct?",
+					"answer": "Nine months and twenty days",
+					"points": 10
+				},
+				{
+					"question": "How long did the famine described in II Samuel chapter twenty-one last?",
+					"answer": "Three years",
+					"points": 10
+				},
+				{
+					"question": "How long did the party described in Esther 1 last?",
+					"answer": "180 days",
+					"points": 10
+				},
+				{
+					"question": "How long was the rule of Ishbosheth over Israel?",
+					"answer": "Two years",
+					"points": 10
+				},
+				{
+					"question": "How many days had Lazarus been in the tomb when Jesus arrived?",
+					"answer": "4 days",
+					"points": 10
+				},
+				{
+					"question": "How many fish did the disciples catch in John 21?",
+					"answer": "153 fish",
+					"points": 10
+				},
+				{
+					"question": "How many lepers returned to thank Jesus for their healing?",
+					"answer": "Only one",
+					"points": 10
+				},
+				{
+					"question": "How many men did David kill in the battle described in II Samuel chapter ten?",
+					"answer": "700 charioteers and 40,000 horsemen",
+					"points": 20
+				},
+				{
+					"question": "How many men did the chief of David’s captains kill at one time?",
+					"answer": 800,
+					"points": 10
+				},
+				{
+					"question": "How many men were fed at the first recorded miracle of the fish and loaves?",
+					"answer": "about 5,000",
+					"points": 10
+				},
+				{
+					"question": "How many men were fed at the second recorded miracle of the fish and loaves?",
+					"answer": "about 4,000",
+					"points": 10
+				},
+				{
+					"question": "How many people died in the battle between the forces of Absalom and David?",
+					"answer": "20,000",
+					"points": 10
+				},
+				{
+					"question": "How many times did Jesus ask Peter to care for His sheep or lambs?",
+					"answer": "Three",
+					"points": 10
+				},
+				{
+					"question": "How many times did Peter deny Christ?",
+					"answer": "Three",
+					"points": 10
+				},
+				{
+					"question": "How many times did the Apostle Paul ask for the thorn to be removed?",
+					"answer": "Three times",
+					"points": 10
+				},
+				{
+					"question": "How many valiant men of Israel were counted?",
+					"answer": "800,000",
+					"points": 10
+				},
+				{
+					"question": "How many valiant men of Judah were counted?",
+					"answer": "500,000",
+					"points": 10
+				},
+				{
+					"question": "How many years did Abraham live?",
+					"answer": 175,
+					"points": 10
+				},
+				{
+					"question": "How many years did Adam live?",
+					"answer": 930,
+					"points": 10
+				},
+				{
+					"question": "How many years did Isaac live?",
+					"answer": 180,
+					"points": 10
+				},
+				{
+					"question": "How many years did Jacob (Israel) live?",
+					"answer": 147,
+					"points": 10
+				},
+				{
+					"question": "How many years did Joseph live?",
+					"answer": 110,
+					"points": 10
+				},
+				{
+					"question": "How many years did Methuselah live?",
+					"answer": 969,
+					"points": 10
+				},
+				{
+					"question": "How many years did Noah live?",
+					"answer": 950,
+					"points": 10
+				},
+				{
+					"question": "How many years did Sarah live?",
+					"answer": 127,
+					"points": 10
+				},
+				{
+					"question": "How often does the International General Assembly meet?",
+					"answer": "Biennially (every other year)",
+					"points": 10
+				},
+				{
+					"question": "How old was David when he began to reign?",
+					"answer": "Thirty years old",
+					"points": 10
+				},
+				{
+					"question": "How old was Jesus when He began His earthly ministry?",
+					"answer": "30 years old",
+					"points": 10
+				},
+				{
+					"question": "How old was Jesus when He died on the cross?",
+					"answer": "33 years old",
+					"points": 10
+				},
+				{
+					"question": "How old was Jesus when He taught in the temple for the first recorded time?",
+					"answer": "12 years old",
+					"points": 10
+				},
+				{
+					"question": "How was Absalom subdued in the battle?",
+					"answer": "“The mule went under the thick boughs of a great terebinth tree, and his head caught in the terebinth; so he was left hanging between heaven and earth. “",
+					"points": 20
+				},
+				{
+					"question": "How was David made king over all of Israel?",
+					"answer": "“Then all the tribes of Israel came to David at Hebron and spoke, saying, “Indeed we are your bone and your flesh. Also, in time past, when Saul was king over us, you were the one who led Israel out and brought them in; and the LORD said to you, ‘You shall shepherd My people Israel, and be ruler over Israel.’ ” Therefore all the elders of Israel came to the king at Hebron, and King David made a covenant with them at Hebron before the LORD. And they anointed David king over Israel.”",
+					"points": 30
+				},
+				{
+					"question": "How were David’s needs met while on the run from Absalom?",
+					"answer": "through the kindness and generosity of others, many of whom David had helped in the past",
+					"points": 20
+				},
+				{
+					"question": "In what ancient profession did Jesus labor?",
+					"answer": "Carpenter",
+					"points": 10
+				},
+				{
+					"question": "In what ancient profession did Matthew labor?",
+					"answer": "Tax collector",
+					"points": 10
+				},
+				{
+					"question": "In what ancient profession did Paul labor?",
+					"answer": "Tentmaker",
+					"points": 10
+				},
+				{
+					"question": "In what ancient profession did Peter labor?",
+					"answer": "Fisherman",
+					"points": 10
+				},
+				{
+					"question": "In what city was Jesus Christ born?",
+					"answer": "Bethlehem",
+					"points": 10
+				},
+				{
+					"question": "In what languages was the inscription over Jesus on the cross written?",
+					"answer": "Greek, Latin, Hebrew",
+					"points": 10
+				},
+				{
+					"question": "In what River was Jesus Baptized?",
+					"answer": "The River Jordan",
+					"points": 10
+				},
+				{
+					"question": "In what three languages was the Bible originally written?",
+					"answer": "Hebrew, Greek, Aramaic",
+					"points": 10
+				},
+				{
+					"question": "In what year was Israel taken into captivity to Assyria?",
+					"answer": "722 BC",
+					"points": 10
+				},
+				{
+					"question": "In what year was Judah taken into captivity to Babylon?",
+					"answer": "586 BC",
+					"points": 10
+				},
+				{
+					"question": "In what year was the Second Temple established in Jerusalem?",
+					"answer": "516 BC",
+					"points": 10
+				},
+				{
+					"question": "In whose tomb was Jesus buried?",
+					"answer": "Joseph of Arimathea",
+					"points": 10
+				},
+				{
+					"question": "Jesus said, “If anyone desires to come after me…”",
+					"answer": "“Let him deny himself, take up his cross, and follow me”",
+					"points": 20
+				},
+				{
+					"question": "John, the youngest disciple, wrote what five books of the New Testament?",
+					"answer": "The Book of John; 1st, 2nd, and 3rd John; the Book of Revelation.",
+					"points": 20
+				},
+				{
+					"question": "List the books of the New Testament.",
+					"answer": "Matthew, Mark, Luke, John, Acts, Romans, 1st and 2nd Corinthians, Galatians, Ephesians, Philippians, Colossians, 1 and 2nd Thessalonians, 1st and 2nd Timothy, Titus, Philemon, Hebrews, James, 1st and 2nd Peter, 1st 2nd and 3rd John, Jude, Revelation",
+					"points": 30
+				},
+				{
+					"question": "List the books of the Old Testament.",
+					"answer": "Genesis, Exodus, Leviticus, Numbers, Deuteronomy, Joshua, Judges, Ruth, 1st and 2nd Samuel, 1st and 2nd Kings, 1st and 2nd Chronicles, Ezra, Nehemiah, Esther, Job, Psalms, Proverbs, Ecclesiastes, Song of Solomon, Isaiah, Jeremiah, Lamentations, Ezekiel, Daniel, Hosea, Joel, Amos, Obadiah, Jonah, Micah, Nahum, Habakkuk, Zepheniah, Haggai, Zechariah, Malachi",
+					"points": 30
+				},
+				{
+					"question": "List the brothers of Jesus.",
+					"answer": "James, Judas, Joseph, Simon",
+					"points": 10
+				},
+				{
+					"question": "List the conquests of David recorded in II Samuel chapter eight.",
+					"answer": "David defeated the Philistines, Moab, Hadadezer the prince of Zobah and the Syrians of Damascus, and David received tribute from the kingdom of Hamath",
+					"points": 20
+				},
+				{
+					"question": "List the divisional sections of the Old Testament.",
+					"answer": "The Torah, the Prophets and the Writings",
+					"points": 10
+				},
+				{
+					"question": "List the female followers of Jesus mentioned in Luke 8.",
+					"answer": "Mary Magdalene, Joanna the wife of Chuza, Susanna and many others.",
+					"points": 20
+				},
+				{
+					"question": "List the followers of Jesus who are known as “the twelve.”",
+					"answer": "Simon Peter, James, John, Andrew, Bartholomew (or Nathanael), James the younger, Judas, Jude (or Thaddeus), Matthew (or Levi), Philip, Simon the Zealot, Thomas.",
+					"points": 20
+				},
+				{
+					"question": "List the four Gospels.",
+					"answer": "Matthew, Mark, Luke and John",
+					"points": 10
+				},
+				{
+					"question": "List the friends of Job.",
+					"answer": "Eliphaz, Bildad and Zophar",
+					"points": 10
+				},
+				{
+					"question": "List the fruit of the Spirit.",
+					"answer": "“…the fruit of the Spirit is love, joy, peace, longsuffering, kindness, goodness, faithfulness, gentleness, self-control.”",
+					"points": 20
+				},
+				{
+					"question": "List the gifts given to Rebekah in Genesis 24:22.",
+					"answer": "A gold nose-ring weighing a half-shekel and two gold bands for her arms, ten shekels in weight.",
+					"points": 20
+				},
+				{
+					"question": "List the kings who ruled over the united kingdom of Israel.",
+					"answer": "Saul, David, Solomon",
+					"points": 10
+				},
+				{
+					"question": "List the men who appeared with Jesus at His transfiguration.",
+					"answer": "Moses and Elijah",
+					"points": 10
+				},
+				{
+					"question": "List the men who are known as the patriarchs.",
+					"answer": "Abraham, Isaac and Jacob",
+					"points": 10
+				},
+				{
+					"question": "List the names of the three men who parted the Jordan River.",
+					"answer": "Joshua, Elijah, Elisha",
+					"points": 10
+				},
+				{
+					"question": "List the plagues of Egypt.",
+					"answer": "The water turned to blood, frogs, lice, swarms of insects, pestilence of livestock, boils, thunderstorm of hail and fire, locusts, darkness for three days, the slaying of the firstborn",
+					"points": 20
+				},
+				{
+					"question": "List the priests of Israel according to II Samuel chapter twenty.",
+					"answer": "Zadok and Abiathar",
+					"points": 10
+				},
+				{
+					"question": "List the siblings of Moses.",
+					"answer": "Aaron and Miriam",
+					"points": 10
+				},
+				{
+					"question": "List the sons of David born in Hebron.",
+					"answer": "“His firstborn was Amnon by Ahinoam the Jezreelitess; his second, Chileab, by Abigail the widow of Nabal the Carmelite; the third, Absalom the son of Maacah, the daughter of Talmai, king of Geshur; the fourth, Adonijah the son of Haggith; the fifth, Shephatiah the son of Abital; and the sixth, Ithream, by David’s wife Eglah.”",
+					"points": 30
+				},
+				{
+					"question": "List the sons of David born in Jerusalem.",
+					"answer": "Shammua, Shobab, Nathan, Solomon, Ibhar, Elishua, Nepheg, Japhia, Elishama, Eliada, and Eliphelet.",
+					"points": 20
+				},
+				{
+					"question": "List the sons of Isaiah.",
+					"answer": "Maher-shalal-hash-baz and Shear-Jashub",
+					"points": 10
+				},
+				{
+					"question": "List the sons of Michal.",
+					"answer": "Michal had no children.",
+					"points": 10
+				},
+				{
+					"question": "List the sons of Rizpah.",
+					"answer": "Armoni and Mephibosheth",
+					"points": 10
+				},
+				{
+					"question": "List the sons of Zeruiah.",
+					"answer": "Joab, Abishai and Asahel",
+					"points": 20
+				},
+				{
+					"question": "List the three pilgrimage festivals.",
+					"answer": "The Feast of Passover, the Feast of Weeks and the Feast of Tabernacles or Booths",
+					"points": 20
+				},
+				{
+					"question": "List the tribes of Israel.",
+					"answer": "Reuben, Simeon, Levi, Judah, Issachar, Naphtali, Dan, Gad, Asher, Benjamin, Zebulun, Ephraim, Mannasseh",
+					"points": 10
+				},
+				{
+					"question": "List the two bodies of water miraculously parted in scripture.",
+					"answer": "The Red Sea and the Jordan River.",
+					"points": 10
+				},
+				{
+					"question": "List the two books of the Bible named after women.",
+					"answer": "Ruth and Esther",
+					"points": 10
+				},
+				{
+					"question": "List the two kingdoms that were created from the iniquity of Lot’s daughters?",
+					"answer": "Moab and Ammon",
+					"points": 10
+				},
+				{
+					"question": "List the women who are described as prophetesses in the Old Testament.",
+					"answer": "Miriam Deborah Noadiah Huldah Isaiah’s wife",
+					"points": 20
+				},
+				{
+					"question": "List the women who are known as the matriarchs",
+					"answer": "Sarah, Rebekah, Rachel and Leah",
+					"points": 10
+				},
+				{
+					"question": "List the women who are recorded in the genealogy of Christ in Matthew.",
+					"answer": "Tamar, Rahab, Ruth and Bathsheba.",
+					"points": 20
+				},
+				{
+					"question": "Mary, Martha and Lazarus were residents of what city?",
+					"answer": "Bethany",
+					"points": 10
+				},
+				{
+					"question": "Name Jesus’s earthly parents?",
+					"answer": "Mary and Joseph",
+					"points": 10
+				},
+				{
+					"question": "Name the 3 temptations Jesus endured while in the wilderness.",
+					"answer": "1. Command the stones to become bread \n2. Cast Himself off the pinnacle of the temple.\n3. All the kingdoms of the world would be given if He would bow down and worship him.",
+					"points": 20
+				},
+				{
+					"question": "Name the Angel that spoke to Mary concerning the birth of Christ.",
+					"answer": "Gabriel",
+					"points": 10
+				},
+				{
+					"question": "Name the person that climbed in a tree to get a glimpse of Jesus.",
+					"answer": "Zaccheus",
+					"points": 10
+				},
+				{
+					"question": "Name the sisters of Lazarus.",
+					"answer": "Mary and Martha",
+					"points": 10
+				},
+				{
+					"question": "On what was Absalom riding during the battle?",
+					"answer": "A mule",
+					"points": 10
+				},
+				{
+					"question": "On which day of the year could the High Priest enter the Holiest Place, the innermost part of the temple where the Covenant Box was kept?",
+					"answer": "Yom Kippur or The Day of Atonement",
+					"points": 10
+				},
+				{
+					"question": "Over where did Abner establish Ishbosheth as king?",
+					"answer": "“he made him king over Gilead, over the Ashurites, over Jezreel, over Ephraim, over Benjamin, and over all Israel.”",
+					"points": 20
+				},
+				{
+					"question": "Recite 1 Chronicles 16:34.",
+					"answer": "“Oh, give thanks to the LORD, for He is good! For His mercy endures forever.”",
+					"points": 20
+				},
+				{
+					"question": "Recite 1 Corinthians 13:12.",
+					"answer": "“For now we see in a mirror, dimly, but then face to face. Now I know in part, but then I shall know just as I also am known.”",
+					"points": 20
+				},
+				{
+					"question": "Recite 1 Corinthians 13:1-2.",
+					"answer": "“Though I speak with the tongues of men and of angels, but have not love, I have become sounding brass or a clanging cymbal. And though I have the gift of prophecy, and understand all mysteries and all knowledge, and though I have all faith, so that I could remove mountains, but have not love, I am nothing.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 Corinthians Recite 1 Corinthians 13:4-8a.",
+					"answer": "Love suffers long and is kind; love does not envy; love does not parade itself, is not puffed up; does not behave rudely, does not seek its own, is not provoked, thinks no evil; does not rejoice in iniquity, but rejoices in the truth; bears all things, believes all things, hopes all things, endures all things. Love never fails.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 John 1:5.",
+					"answer": "“This is the message which we have heard from Him and declare to you, that God is light and in Him is no darkness at all.”",
+					"points": 20
+				},
+				{
+					"question": "Recite 1 John 2:20-23.",
+					"answer": "“But you have an anointing from the Holy One, and you know all things. I have not written to you because you do not know the truth, but because you know it, and that no lie is of the truth. Who is a liar but he who denies that Jesus is the Christ? He is antichrist who denies the Father and the Son. Whoever denies the Son does not have the Father either; he who acknowledges the Son has the Father also.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 John 4:12.",
+					"answer": "“No one has seen God at any time. If we love one another, God abides in us, and His love has been perfected in us.”",
+					"points": 20
+				},
+				{
+					"question": "Recite 1 John 4:7-10.",
+					"answer": "“Beloved, let us love one another, for love is of God; and everyone who loves is born of God and knows God. He who does not love does not know God, for God is love. In this the love of God was manifested toward us, that God has sent His only begotten Son into the world, that we might live through Him. In this is love, not that we loved God, but that He loved us and sent His Son to be the propitiation for our sins.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 Peter 1:22-25.",
+					"answer": "“Since you have purified your souls in obeying the truth through the Spirit in sincere love of the brethren, love one another fervently with a pure heart, having been born again, not of corruptible seed but incorruptible, through the word of God which lives and abides forever, because “All flesh is as grass, And all the glory of man as the flower of the grass. The grass withers, And its flower falls away, But the word of the LORD endures forever.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 Peter 1:6-8.",
+					"answer": "“In this you greatly rejoice, though now for a little while, if need be, you have been grieved by various trials, that the genuineness of your faith, being much more precious than gold that perishes, though it is tested by fire, may be found to praise, honor, and glory at the revelation of Jesus Christ.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 1 Peter 2:9-10.",
+					"answer": "“But you are a chosen generation, a royal priesthood, a holy nation, His own special people, that you may proclaim the praises of Him who called you out of darkness into His marvelous light; who once were not a people but are now the people of God, who had not obtained mercy but now have obtained mercy.”",
+					"points": 30
+				},
+				{
+					"question": "Recite 2 Corinthians 12:9.",
+					"answer": "“And He said to me, “My grace is sufficient for you, for My strength is made perfect in weakness.””",
+					"points": 20
+				},
+				{
+					"question": "Recite Acts 17:24-25.",
+					"answer": "“God, who made the world and everything in it, since He is Lord of heaven and earth, does not dwell in temples made with hands. Nor is He worshiped with men’s hands, as though He needed anything, since He gives to all life, breath, and all things.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Acts 17:28.",
+					"answer": "“for in Him we live and move and have our being, as also some of your own poets have said, ‘For we are also His offspring.’”",
+					"points": 20
+				},
+				{
+					"question": "Recite article eight of the Declaration of Faith.",
+					"answer": "“We believe in the baptism with the Holy Ghost subsequent to a clean heart.”",
+					"points": 20
+				},
+				{
+					"question": "Recite article eleven of the Declaration of Faith.",
+					"answer": "“We believe divine healing is provided for all in the atonement.”",
+					"points": 20
+				},
+				{
+					"question": "Recite article five of the Declaration of Faith.",
+					"answer": "“We believe that justification, regeneration, and the new birth are wrought by faith in the blood of Jesus Christ.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article four of the Declaration of Faith.",
+					"answer": "“We believe that all have sinned and come short of the glory of God and that repentance is commanded of God for all and necessary for forgiveness of sins.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article fourteen of the Declaration of Faith.",
+					"answer": "“We believe in the bodily resurrection; eternal life for the righteous, and eternal punishment for the wicked.”",
+					"points": 20
+				},
+				{
+					"question": "Recite article nine of the Declaration of Faith.",
+					"answer": "“We believe in speaking with other tongues as the Spirit gives utterance and that it is the initial evidence of the baptism in the Holy Ghost.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article one of the Declaration of Faith.",
+					"answer": "“We believe in the verbal inspiration of the Bible”",
+					"points": 20
+				},
+				{
+					"question": "Recite article seven of the Declaration of Faith.",
+					"answer": "“We believe holiness to be God’s standard of living for His people.”",
+					"points": 20
+				},
+				{
+					"question": "Recite article six of the Declaration of Faith.",
+					"answer": "“We believe in sanctification subsequent to the new birth, through faith in the blood of Christ; through the Word, and by the Holy Ghost.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article ten of the Declaration of Faith.",
+					"answer": "“We believe in water baptism by immersion, and all who repent should be baptized in the name of the Father, and of the Son, and of the Holy Ghost.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article thirteen of the Declaration of Faith.",
+					"answer": "“We believe in the premillennial second coming of Jesus. First, to resurrect the righteous dead and to catch away the living saints to Him in the air. Second, to reign on the earth a thousand years.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article three of the Declaration of Faith.",
+					"answer": "“We believe that Jesus Christ is the only begotten Son of the Father, conceived of the Holy Ghost, and born of the Virgin Mary. That Jesus was crucified, buried, and raised from the dead. That He ascended to heaven and is today at the right hand of the Father as the Intercessor.”",
+					"points": 30
+				},
+				{
+					"question": "Recite article twelve of the Declaration of Faith.",
+					"answer": "“We believe in the Lord’s Supper and washing of the saints’ feet.”",
+					"points": 20
+				},
+				{
+					"question": "Recite article two of the Declaration of Faith.",
+					"answer": "“We believe in one God eternally existing in three persons; namely, the Father, Son, and Holy Ghost.”",
+					"points": 20
+				},
+				{
+					"question": "Recite David’s deathbed statement to Solomon.",
+					"answer": "“I go the way of all the earth; be strong, therefore, and prove yourself a man. And keep the charge of the LORD your God: to walk in His ways, to keep His statutes, His commandments, His judgments, and His testimonies, as it is written in the Law of Moses, that you may prosper in all that you do and wherever you turn”",
+					"points": 30
+				},
+				{
+					"question": "Recite David’s lament over Abner.",
+					"answer": "“Should Abner die as a fool dies? \nYour hands were not bound\nNor your feet put into fetters;\nAs a man falls before wicked men, so you fell.”",
+					"points": 30
+				},
+				{
+					"question": "Recite David’s lament upon hearing of Absalom’s death?",
+					"answer": "“O my son Absalom—my son, my son Absalom—if only I had died in your place! O Absalom my son, my son!”",
+					"points": 20
+				},
+				{
+					"question": "Recite Deuteronomy 6:4-5.",
+					"answer": "“Hear, O Israel: The LORD our God, the LORD is one! You shall love the LORD your God with all your heart, with all your soul, and with all your strength.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Deuteronomy 6:6-9.",
+					"answer": "“And these words which I command you today shall be in your heart. You shall teach them diligently to your children, and shall talk of them when you sit in your house, when you walk by the way, when you lie down, and when you rise up. You shall bind them as a sign on your hand, and they shall be as frontlets between your eyes. You shall write them on the doorposts of your house and on your gates.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Ephesians 2:19-22.",
+					"answer": "“Now, therefore, you are no longer strangers and foreigners, but fellow citizens with the saints and members of the household of God, having been built on the foundation of the apostles and prophets, Jesus Christ Himself being the chief cornerstone, in whom the whole building, being fitted together, grows into a holy temple in the Lord, in whom you also are being built together for a dwelling place of God in the Spirit.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Ephesians 2:4-7.",
+					"answer": "“But God, who is rich in mercy, because of His great love with which He loved us, even when we were dead in trespasses, made us alive together with Christ (by grace you have been saved), and raised us up together, and made us sit together in the heavenly places in Christ Jesus, that in the ages to come He might show the exceeding riches of His grace in His kindness toward us in Christ Jesus.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Ephesians 2:8-10.",
+					"answer": "“For by grace you have been saved through faith, and that not of yourselves; it is the gift of God, not of works, lest anyone should boast. For we are His workmanship, created in Christ Jesus for good works, which God prepared beforehand that we should walk in them.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Ephesians 5:1-2.",
+					"answer": "“Therefore be imitators of God as dear children. And walk in love, as Christ also has loved us and given Himself for us, an offering and a sacrifice to God for a sweet-smelling aroma.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Galatians 3:28-29.",
+					"answer": "“There is neither Jew nor Greek, there is neither slave nor free, there is neither male nor female; for you are all one in Christ Jesus. And if you are Christ’s, then you are Abraham’s seed, and heirs according to the promise.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Galatians 5:14.",
+					"answer": "“For all the law is fulfilled in one word, even in this: “You shall love your neighbor as yourself.””",
+					"points": 20
+				},
+				{
+					"question": "Recite Hebrews 11:1.",
+					"answer": "“Now faith is the substance of things hoped for, the evidence of things not seen.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Hebrews 11:3.",
+					"answer": "“By faith we understand that the worlds were framed by the word of God, so that the things which are seen were not made of things which are visible.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Hebrews 4:14-16.",
+					"answer": "“Seeing then that we have a great High Priest who has passed through the heavens, Jesus the Son of God, let us hold fast our confession. For we do not have a High Priest who cannot sympathize with our weaknesses, but was in all points tempted as we are, yet without sin. Let us therefore come boldly to the throne of grace, that we may obtain mercy and find grace to help in time of need.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 19:1-3.",
+					"answer": "“And Joab was told, “Behold, the king is weeping and mourning for Absalom.” So the victory that day was turned into mourning for all the people. For the people heard it said that day, “The king is grieved for his son.” And the people stole back into the city that day, as people who are ashamed steal away when they flee in battle.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:14-16.",
+					"answer": "“The LORD thundered from heaven,\nAnd the Most High uttered His voice. \nHe sent out arrows and scattered them;\nLightning bolts, and He vanquished them. \nThen the channels of the sea were seen,\nThe foundations of the world were uncovered, \nAt the rebuke of the LORD,\nAt the blast of the breath of His nostrils.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:17-20.",
+					"answer": "“He sent from above, He took me, \nHe drew me out of many waters.\nHe delivered me from my strong enemy, \nFrom those who hated me;\nFor they were too strong for me.\nThey confronted me in the day of my calamity, \nBut the LORD was my support.\nHe also brought me out into a broad place;\nHe delivered me because He delighted in me.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:2-4.",
+					"answer": "“The LORD is my rock and my fortress and my deliverer; The God of my strength, in whom I will trust;\nMy shield and the horn of my salvation, \nMy stronghold and my refuge;\nMy Savior, You save me from violence.\nI will call upon the LORD, who is worthy to be praised; \nSo shall I be saved from my enemies.",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:26-28.",
+					"answer": "“With the merciful You will show Yourself merciful; \nWith a blameless man You will show Yourself blameless; With the pure You will show Yourself pure;\nAnd with the devious You will show Yourself shrewd. \nYou will save the humble people;\nBut Your eyes are on the haughty, that You may bring them down.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:29-31.",
+					"answer": "“For You are my lamp, O LORD; \nThe LORD shall enlighten my darkness.\nFor by You I can run against a troop; \nBy my God I can leap over a wall.\nAs for God, His way is perfect; \nThe word of the LORD is proven;\nHe is a shield to all who trust in Him.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:32-35.",
+					"answer": "“For who is God, except the LORD? \nAnd who is a rock, except our God?\nGod is my strength and power,\nAnd He makes my way perfect.\nHe makes my feet like the feet of deer, \nAnd sets me on my high places.\nHe teaches my hands to make war,\nSo that my arms can bend a bow of bronze.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:36-37.",
+					"answer": "You have also given me the shield of Your salvation; \nYour gentleness has made me great.\nYou enlarged my path under me; \nSo my feet did not slip.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:47-50.",
+					"answer": "“The LORD lives! Blessed be my Rock!\nLet God be exalted,\nThe Rock of my salvation!\nIt is God who avenges me,\nAnd subdues the peoples under me; \nHe delivers me from my enemies.\nYou also lift me up above those who rise against me; \nYou have delivered me from the violent man.\nTherefore I will give thanks to You, O LORD, among the Gentiles, \nAnd sing praises to Your name.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:51.",
+					"answer": "“He is the tower of salvation to His king, \nAnd shows mercy to His anointed,\nTo David and his descendants forevermore.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 22:5-7.",
+					"answer": "“When the waves of death surrounded me, \nThe floods of ungodliness made me afraid.\nThe sorrows of Sheol surrounded me; \nThe snares of death confronted me.\nIn my distress I called upon the LORD, \nAnd cried out to my God;\nHe heard my voice from His temple, \nAnd my cry entered His ears.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 23:2-4.",
+					"answer": "“The Spirit of the LORD spoke by me, \nAnd His word was on my tongue.\nThe God of Israel said,\nThe Rock of Israel spoke to me:\n‘He who rules over men must be just, \nRuling in the fear of God.\nAnd he shall be like the light of the morning when the sun rises, \nA morning without clouds,\nLike the tender grass springing out of the earth,\nBy clear shining after rain.’”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 7:21-22.",
+					"answer": "“For Your word’s sake, and according to Your own heart, You have done all these great things, to make Your servant know them. Therefore You are great, O Lord GOD. For there is none like You, nor is there any God besides You, according to all that we have heard with our ears.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 7:23-24.",
+					"answer": "“And who is like Your people, like Israel, the one nation on the earth whom God went to redeem for Himself as a people, to make for Himself a name—and to do for Yourself great and awesome deeds for Your land—before Your people whom You redeemed for Yourself from Egypt, the nations, and their gods? For You have made Your people Israel Your very own people forever; and You, LORD, have become their God.”",
+					"points": 30
+				},
+				{
+					"question": "Recite II Samuel 7:28-29.",
+					"answer": "“And now, O Lord GOD, You are God, and Your words are true, and You have promised this goodness to Your servant. Now therefore, let it please You to bless the house of Your servant, that it may continue before You forever; for You, O Lord GOD, have spoken it, and with Your blessing let the house of Your servant be blessed forever.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Isaiah 61:10-11.",
+					"answer": "“I will greatly rejoice in the LORD, \nMy soul shall be joyful in my God;\nFor He has clothed me with the garments of salvation, \nHe has covered me with the robe of righteousness,\nAs a bridegroom decks himself with ornaments, \nAnd as a bride adorns herself with her jewels. \nFor as the earth brings forth its bud,\nAs the garden causes the things that are sown in it to spring forth,\nSo the Lord GOD will cause righteousness and praise to spring forth before all the nations.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Isaiah 62:11-12.",
+					"answer": "“Indeed the LORD has proclaimed \nTo the end of the world:\n“Say to the daughter of Zion, \n‘Surely your salvation is coming; \nBehold, His reward is with Him, \nAnd His work before Him.’ ”\nAnd they shall call them The Holy People, \nThe Redeemed of the LORD;\nAnd you shall be called Sought Out, \nA City Not Forsaken.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Isaiah 9:2.",
+					"answer": "“The people who walked in darkness \nHave seen a great light;\nThose who dwelt in the land of the shadow of death, \nUpon them a light has shined.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Jeremiah 29:12-13.",
+					"answer": "“Then you will call upon Me and go and pray to Me, and I will listen to you. And you will seek Me and find Me, when you search for Me with all your heart.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Joab’s chastisement of David following the king’s lament.",
+					"answer": "“today I perceive that if Absalom had lived and all of us had died today, then it would have pleased you well. Now therefore, arise, go out and speak comfort to your servants. For I swear by the LORD, if you do not go out, not one will stay with you this night. And that will be worse for you than all the evil that has befallen you from your youth until now.”",
+					"points": 30
+				},
+				{
+					"question": "Recite John 1:1.",
+					"answer": "“In the beginning was the Word, and the Word was with God, and the Word was God.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 1:2.",
+					"answer": "“He was in the beginning with God.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 1:3.",
+					"answer": "“All things were made through Him, and without Him nothing was made that was made.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 1:4-5.",
+					"answer": "“In Him was life, and the life was the light of men. And the light shines in the darkness, and the darkness did not comprehend it.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 11:25-26.",
+					"answer": "“Jesus said to her, “I am the resurrection and the life. He who believes in Me, though he may die, he shall live. 26 And whoever lives and believes in Me shall never die. Do you believe this?””",
+					"points": 30
+				},
+				{
+					"question": "Recite John 12:46.",
+					"answer": "“I have come as a light into the world, that whoever believes in Me should not abide in darkness.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 14:27.",
+					"answer": "“Peace I leave with you, My peace I give to you; not as the world gives do I give to you. Let not your heart be troubled, neither let it be afraid.”",
+					"points": 30
+				},
+				{
+					"question": "Recite John 14:6.",
+					"answer": "“Jesus said to him, “I am the way, the truth, and the life. No one comes to the Father except through Me.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 17:23.",
+					"answer": "“I in them, and You in Me; that they may be made perfect in one, and that the world may know that You have sent Me, and have loved them as You have loved Me.”",
+					"points": 30
+				},
+				{
+					"question": "Recite John 20:31.",
+					"answer": "“But these are written that you may believe that Jesus is the Christ, the Son of God, and that believing you may have life in His name.”",
+					"points": 30
+				},
+				{
+					"question": "Recite John 21:25.",
+					"answer": "“And there are also many other things that Jesus did, which if they were written one by one, I suppose that even the world itself could not contain the books that would be written. Amen.”",
+					"points": 30
+				},
+				{
+					"question": "Recite John 7:37-38.",
+					"answer": "“On the last day, that great day of the feast, Jesus stood and cried out, saying, “If anyone thirsts, let him come to Me and drink. He who believes in Me, as the Scripture has said, out of his heart will flow rivers of living water.””",
+					"points": 30
+				},
+				{
+					"question": "Recite John 8:32.",
+					"answer": "“And you shall know the truth, and the truth shall make you free.”",
+					"points": 20
+				},
+				{
+					"question": "Recite John 8:58.",
+					"answer": "“Jesus said to them, “Most assuredly, I say to you, before Abraham was, I AM.””",
+					"points": 20
+				},
+				{
+					"question": "Recite John the Baptist’s statement found in John 3:30.",
+					"answer": "“He must increase, but I must decrease.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Joshua 1:9.",
+					"answer": "“Have I not commanded you? Be strong and of good courage; do not be afraid, nor be dismayed, for the LORD your God is with you wherever you go.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Luke 18:16.",
+					"answer": "“But Jesus called them to Him and said, “Let the little children come to Me, and do not forbid them; for of such is the kingdom of God.“",
+					"points": 30
+				},
+				{
+					"question": "Recite Luke 5:24a.",
+					"answer": "“But that you may know that the Son of Man has power on earth to forgive sins.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Luke 6:37.",
+					"answer": "“Judge not, and you shall not be judged. Condemn not, and you shall not be condemned. Forgive, and you will be forgiven.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Luke 9:48b.",
+					"answer": "“Whoever receives this little child in My name receives Me; and whoever receives Me receives Him who sent Me. For he who is least among you all will be great.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Matthew 1:23.",
+					"answer": "“Behold, the virgin shall be with child, and bear a Son, and they shall call His name Immanuel,” which is translated, “God with us.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Matthew 5:13.",
+					"answer": "“You are the salt of the earth; but if the salt loses its flavor, how shall it be seasoned? It is then good for nothing but to be thrown out and trampled underfoot by men.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Micah 6:8.",
+					"answer": "“He has shown you, O man, what is good; \nAnd what does the LORD require of you\nBut to do justly, \nTo love mercy,\nAnd to walk humbly with your God?”",
+					"points": 30
+				},
+				{
+					"question": "Recite Nathan’s response to David’s acknowledgement of his sin.",
+					"answer": "“The LORD also has put away your sin; you shall not die. However, because by this deed you have given great occasion to the enemies of the LORD to blaspheme, the child also who is born to you shall surely die.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Philippians 2:14-15.",
+					"answer": "“Do all things without complaining and disputing, that you may become blameless and harmless, children of God without fault in the midst of a crooked and perverse generation, among whom you shine as lights in the world,”",
+					"points": 30
+				},
+				{
+					"question": "Recite Philippians 2:5-9.",
+					"answer": "“Let this mind be in you which was also in Christ Jesus, who, being in the form of God, did not consider it robbery to be equal with God, but made Himself of no reputation, taking the form of a bondservant, and coming in the likeness of men. And being found in appearance as a man, He humbled Himself and became obedient to the point of death, even the death of the cross. Therefore God also has highly exalted Him and given Him the name which is above every name.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Revelation 12:10-11.",
+					"answer": "“Then I heard a loud voice saying in heaven, “Now salvation, and strength, and the kingdom of our God, and the power of His Christ have come, for the accuser of our brethren, who accused them before our God day and night, has been cast down. And they overcame him by the blood of the Lamb and by the word of their testimony, and they did not love their lives to the death.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Revelation 22:20-21.",
+					"answer": "“He who testifies to these things says, “Surely I am coming quickly.” Amen. Even so, come, Lord Jesus! The grace of our Lord Jesus Christ be with you all. Amen.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Revelation 5:11-12.",
+					"answer": "“Then I looked, and I heard the voice of many angels around the throne, the living creatures, and the elders; and the number of them was ten thousand times ten thousand, and thousands of thousands, saying with a loud voice:\nWorthy is the Lamb who was slain To receive power and riches and wisdom, And strength and honor and glory and blessing!”",
+					"points": 30
+				},
+				{
+					"question": "Recite Romans 10:9-10.",
+					"answer": "“…that if you confess with your mouth the Lord Jesus and believe in your heart that God has raised Him from the dead, you will be saved. For with the heart one believes unto righteousness, and with the mouth confession is made unto salvation.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Romans 12:21.",
+					"answer": "“Do not be overcome by evil, but overcome evil with good.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Romans 3:23-26.",
+					"answer": "“for all have sinned and fall short of the glory of God, being justified freely by His grace through the redemption that is in Christ Jesus, whom God set forth as a propitiation by His blood, through faith, to demonstrate His righteousness, because in His forbearance God had passed over the sins that were previously committed, to demonstrate at the present time His righteousness, that He might be just and the justifier of the one who has faith in Jesus.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Romans 5:18-19.",
+					"answer": "“Therefore, as through one man’s offense judgment came to all men, resulting in condemnation, even so through one Man’s righteous act the free gift came to all men, resulting in justification of life. For as by one man’s disobedience many were made sinners, so also by one Man’s obedience many will be made righteous.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Romans 5:20-21.",
+					"answer": "“Moreover the law entered that the offense might abound. But where sin abounded, grace abounded much more, so that as sin reigned in death, even so grace might reign through righteousness to eternal life through Jesus Christ our Lord.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Romans 8:18.",
+					"answer": "“For I consider that the sufferings of this present time are not worthy to be compared with the glory which shall be revealed in us.”",
+					"points": 20
+				},
+				{
+					"question": "Recite Romans 8:28.",
+					"answer": "“And we know that all things work together for good to those who love God, to those who are the called according to His purpose. “",
+					"points": 20
+				},
+				{
+					"question": "Recite Romans 8:31.",
+					"answer": "“What then shall we say to these things? If God is for us, who can be against us?”",
+					"points": 20
+				},
+				{
+					"question": "Recite Romans 8:38-39.",
+					"answer": "“For I am persuaded that neither death nor life, nor angels nor principalities nor powers, nor things present nor things to come, nor height nor depth, nor any other created thing, shall be able to separate us from the love of God which is in Christ Jesus our Lord.”",
+					"points": 30
+				},
+				{
+					"question": "Recite Song of Solomon 6:3a.",
+					"answer": "“I am my beloved’s, \nAnd my beloved is mine.”",
+					"points": 20
+				},
+				{
+					"question": "Recite the charge against David made by Michal upon his return after bringing the ark to Jerusalem.",
+					"answer": "“How glorious was the king of Israel today, uncovering himself today in the eyes of the maids of his servants, as one of the base fellows shamelessly uncovers himself!”",
+					"points": 30
+				},
+				{
+					"question": "Recite the charge against David made by the Lord through Nathan in II Samuel chapter twelve.",
+					"answer": "“Why have you despised the commandment of the LORD, to do evil in His sight? You have killed Uriah the Hittite with the sword; you have taken his wife to be your wife, and have killed him with the sword of the people of Ammon. Now therefore, the sword shall never depart from your house, because you have despised Me, and have taken the wife of Uriah the Hittite to be your wife.’”",
+					"points": 30
+				},
+				{
+					"question": "Recite the chastisement of Joab from the woman of Abel.",
+					"answer": "“I am among the peaceable and faithful in Israel. You seek to destroy a city and a mother in Israel. Why would you swallow up the inheritance of the LORD?”",
+					"points": 30
+				},
+				{
+					"question": "Recite the closing of the Song of the Bow.",
+					"answer": "“How the mighty have fallen, \nAnd the weapons of war perished!”",
+					"points": 20
+				},
+				{
+					"question": "Recite the description of Absalom in II Samuel chapter fourteen.",
+					"answer": "“Now in all Israel there was no one who was praised as much as Absalom for his good looks. From the sole of his foot to the crown of his head there was no blemish in him. And when he cut the hair of his head—at the end of every year he cut it because it was heavy on him—when he cut it, he weighed the hair of his head at two hundred shekels according to the king’s standard.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the Great Commission as recorded in Matthew.",
+					"answer": "“Go therefore and make disciples of all the nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, 20 teaching them to observe all things that I have commanded you; and lo, I am with you always, even to the end of the age.” Amen.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the Lord’s prayer as recorded in Matthew.",
+					"answer": "“In this manner, therefore, pray: Our Father in heaven, Hallowed be Your name. Your kingdom come Your will be done on earth as it is in heaven. Give us this day our daily bread. And forgive us our debts, As we forgive our debtors. And do not lead us into temptation But, deliver us from the evil one. For Yours is the kingdom and the power and the glory forever. Amen.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the prophecy Jesus fulfilled by entering Jerusalem on a donkey.",
+					"answer": "“Fear not, daughter of Zion;\nBehold, your King is coming, \nSitting on a donkey’s colt.”",
+					"points": 20
+				},
+				{
+					"question": "Recite the scriptural basis for article eleven of the Declaration of Faith.",
+					"answer": "“Who Himself bore our sins in His own body on the tree, that we, having died to sins, might live for righteousness—by whose stripes you were healed. For you were like sheep going astray, but have now returned to the Shepherd and Overseer of your souls.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for article nine of the Declaration of Faith.",
+					"answer": "“When the Day of Pentecost had fully come, they were all with one accord in one place. And suddenly there came a sound from heaven, as of a rushing mighty wind, and it filled the whole house where they were sitting. Then there appeared to them divided tongues, as of fire, and one sat upon each of them. And they were all filled with the Holy Spirit and began to speak with other tongues, as the Spirit gave them utterance.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for article one of the Declaration of Faith.",
+					"answer": "“All Scripture is given by inspiration of God, and is profitable for doctrine, for reproof, for correction, for instruction in righteousness, that the man of God may be complete, thoroughly equipped for every good work.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for article seven of the Declaration of Faith.",
+					"answer": "“ ‘You shall be holy, for I the LORD your God am holy.”",
+					"points": 20
+				},
+				{
+					"question": "Recite the scriptural basis for Jesus’s water baptism by immersion.",
+					"answer": "“When He had been baptized, Jesus came up immediately from the water; and behold, the heavens were opened to Him, and He saw the Spirit of God descending like a dove and alighting upon Him. And suddenly a voice came from heaven, saying, “This is My beloved Son, in whom I am well pleased.””",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for regeneration.",
+					"answer": "“But when the kindness and the love of God our Savior toward man appeared, not by works of righteousness which we have done, but according to His mercy He saved us, through the washing of regeneration and renewing of the Holy Spirit, whom He poured out on us abundantly through Jesus Christ our Savior, that having been justified by His grace we should become heirs according to the hope of eternal life.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for the Lord’s supper.",
+					"answer": "“Then He took the cup, and gave thanks, and said, “Take this and divide it among yourselves; for I say to you, I will not drink of the fruit of the vine until the kingdom of God comes.” And He took bread, gave thanks and broke it, and gave it to them, saying, “This is My body which is given for you; do this in remembrance of Me.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the scriptural basis for washing of the saints’ feet.",
+					"answer": "“If I then, your Lord and Teacher, have washed your feet, you also ought to wash one another’s feet. For I have given you an example, that you should do as I have done to you. Most assuredly, I say to you, a servant is not greater than his master; nor is he who is sent greater than he who sent him. If you know these things, blessed are you if you do them.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the statement of Nathan in response to David’s anger directed at the rich man from his story?",
+					"answer": "“You are the man!”",
+					"points": 10
+				},
+				{
+					"question": "Recite the statement of the Father following Jesus’s baptism.",
+					"answer": "“This is My beloved Son, in whom I am well pleased.”",
+					"points": 20
+				},
+				{
+					"question": "Recite the statement of the Lord to David because of his transgressions against Uriah and Bathsheba.",
+					"answer": "“Thus says the LORD: ‘Behold, I will raise up adversity against you from your own house; and I will take your wives before your eyes and give them to your neighbor, and he shall lie with your wives in the sight of this sun. For you did it secretly, but I will do this thing before all Israel, before the sun.’ ”",
+					"points": 30
+				},
+				{
+					"question": "Recite the words Jesus read from the scroll of Isaiah in the synagogue.",
+					"answer": "“The Spirit of the LORD is upon Me,\nBecause He has anointed Me\nTo preach the gospel to the poor;\nHe has sent Me to heal the brokenhearted, To proclaim liberty to the captives\nAnd recovery of sight to the blind,\nTo set at liberty those who are oppressed;\nTo proclaim the acceptable year of the LORD.”",
+					"points": 30
+				},
+				{
+					"question": "Recite the words of Joab to Abishai as they prepared for battle in II Samuel chapter ten.",
+					"answer": "“Be of good courage, and let us be strong for our people and for the cities of our God. And may the LORD do what is good in His sight.”",
+					"points": 30
+				},
+				{
+					"question": "Scripture Completion: “Blessed are the ________________, For they shall be called sons of God.”",
+					"answer": "“peacemakers” (Matthew 5:9)",
+					"points": 10
+				},
+				{
+					"question": "Scripture Completion: “But I say to you, love your enemies,____________, do good to those who hate you, and pray for those who spitefully use you and persecute you,”",
+					"answer": "“bless those who curse you”",
+					"points": 10
+				},
+				{
+					"question": "Scripture Completion: “But I say to you, love your enemies,__________________, do good to those who hate you, and pray for those who spitefully use you and persecute you,”",
+					"answer": "“bless those who curse you”",
+					"points": 20
+				},
+				{
+					"question": "Scripture Completion: “In Him we have redemption through His blood,_________________ ”",
+					"answer": "“…the forgiveness of sins, according to the riches of His grace”",
+					"points": 20
+				},
+				{
+					"question": "Scripture Completion: “These things I have spoken to you, that in Me you may have peace. In the world you will have tribulation; ___________________",
+					"answer": "“…but be of good cheer, I have overcome the world”",
+					"points": 20
+				},
+				{
+					"question": "The general overseer of the Church of God is ____.",
+					"answer": "Gary J. Lewis",
+					"points": 10
+				},
+				{
+					"question": "The secretary general is________.",
+					"answer": "Tom Madden",
+					"points": 10
+				},
+				{
+					"question": "The three assistant general overseers in order of election are:",
+					"answer": "Tony D. Stewart, T. Wayne Dority, and Mark L. Williams",
+					"points": 10
+				},
+				{
+					"question": "To what can David’s many conquests be accredited?",
+					"answer": "“And the LORD preserved David wherever he went.”",
+					"points": 20
+				},
+				{
+					"question": "To where was Jonah trying to sail when running from his call to Nineveh?",
+					"answer": "Tarshish",
+					"points": 10
+				},
+				{
+					"question": "To whom had Michal been married in David’s absence?",
+					"answer": "Paltiel the son of Laish, who went weeping behind her when she was returned to David until he was chastised by Abner",
+					"points": 20
+				},
+				{
+					"question": "What atonement did the Gibeonites ask David for to remit Saul’s guilt against them?",
+					"answer": "That seven descendants of Saul be given to be put to death",
+					"points": 20
+				},
+				{
+					"question": "What became the desire of David’s heart after bringing the ark to Jerusalem?",
+					"answer": "To build a house for the ark of God",
+					"points": 20
+				},
+				{
+					"question": "What chapter in Isaiah was Jesus reading from in the synagogue?",
+					"answer": "Isaiah 61.",
+					"points": 10
+				},
+				{
+					"question": "What city did David conquer immediately after being made king?",
+					"answer": "David conquered Jerusalem, and took the stronghold of Zion that is the City of David",
+					"points": 20
+				},
+				{
+					"question": "What claim did Peter make when Jesus told him that He was going somewhere He could not be followed?",
+					"answer": "That he would lay down his life for Jesus’s sake",
+					"points": 20
+				},
+				{
+					"question": "What destroyed Sodom and Gomorrah?",
+					"answer": "Sulfurous fire from out of heaven",
+					"points": 10
+				},
+				{
+					"question": "What did Abraham tell Abimelech regarding Sarah?",
+					"answer": "That she was his sister, the same lie he told Pharaoh for self-preservation",
+					"points": 20
+				},
+				{
+					"question": "What did David distribute to all the people of Israel to celebrate the ark’s arrival to Jerusalem?",
+					"answer": "a loaf of bread, a piece of meat, and a cake of raisins",
+					"points": 20
+				},
+				{
+					"question": "What did David instruct the children of Judah to be taught according to II Samuel chapter one verse 18?",
+					"answer": "His lamentation over Saul and Jonathan, known as the Song of the Bow",
+					"points": 20
+				},
+				{
+					"question": "What did David say after setting his captains in II Samuel chapter eighteen?",
+					"answer": "“I also will surely go out with you myself.”",
+					"points": 20
+				},
+				{
+					"question": "What did David set out to bring to Jerusalem in II Samuel chapter six?",
+					"answer": "“the ark of God, whose name is called by the Name, the LORD of Hosts, who dwells between the cherubim.”",
+					"points": 20
+				},
+				{
+					"question": "What did Jesus ask the man laying by the pool of Bethesda?",
+					"answer": "“…Do you want to be made well?”",
+					"points": 10
+				},
+				{
+					"question": "What did Jesus invite Thomas to do in order to assuage his doubts?",
+					"answer": "“Reach your finger here, and look at My hands; and reach your hand here, and put it into My side. Do not be unbelieving, but believing.”",
+					"points": 30
+				},
+				{
+					"question": "What did Jesus say to the thief on the cross who asked to be remembered?",
+					"answer": "“And Jesus said to him, ‘Assuredly, I say to you, today you will be with Me in Paradise.’”",
+					"points": 20
+				},
+				{
+					"question": "What did Joab do to Abner upon his return to Hebron?",
+					"answer": "“Joab took him aside in the gate to speak with him privately, and there stabbed him in the stomach, so that he died for the blood of Asahel his brother.”",
+					"points": 20
+				},
+				{
+					"question": "What did John the Baptist call Jesus when he saw Him approaching?",
+					"answer": "“Behold! The Lamb of God who takes away the sin of the world!”",
+					"points": 20
+				},
+				{
+					"question": "What did Mary Magdalene call Jesus once she recognized Him?",
+					"answer": "“Rabboni” which literally means “My teacher”",
+					"points": 10
+				},
+				{
+					"question": "What did Nathan the prophet rename Solomon?",
+					"answer": "Jedidiah",
+					"points": 10
+				},
+				{
+					"question": "What did Nathanael say to Jesus after meeting Him?",
+					"answer": "“Rabbi, You are the Son of God! You are the King of Israel!”",
+					"points": 20
+				},
+				{
+					"question": "What did the Lord tell Nathan to say about David’s desire to build Him a house?",
+					"answer": "“Go and tell My servant David, ‘Thus says the LORD: “Would you build a house for Me to dwell in? For I have not dwelt in a house since the time that I brought the\nchildren of Israel up from Egypt, even to this day, but have moved about in a tent and in a tabernacle. Wherever I have moved about with all the children of Israel, have I ever spoken a word to anyone from the tribes of Israel, whom I commanded to shepherd My people Israel, saying, ‘Why have you not built Me a house of cedar?’ ”",
+					"points": 30
+				},
+				{
+					"question": "What did the Lord tell Nathan to say about David’s house?",
+					"answer": "“And your house and your kingdom shall be established forever before you. Your throne shall be established forever.”",
+					"points": 30
+				},
+				{
+					"question": "What did the Lord tell Nathan to say about how He had dealt with David?",
+					"answer": "“I took you from the sheepfold, from following the sheep, to be ruler over My people, over Israel. And I have been with you wherever you have gone, and have cut off all your enemies from before you, and have made you a great name, like the name of the great men who are on the earth.”",
+					"points": 30
+				},
+				{
+					"question": "What did the rich man do to the poor man in Nathan’s parable?",
+					"answer": "Rather than taking from his own herd or flock, the rich man seized the poor man’s only lamb and prepared it as a meal for a traveler visiting him",
+					"points": 20
+				},
+				{
+					"question": "What does the feast of Passover remember?",
+					"answer": "The final plague before the exodus from Egypt",
+					"points": 20
+				},
+				{
+					"question": "What does the Song of the Bow say about Jonathan and Saul?",
+					"answer": "“Saul and Jonathan were beloved and pleasant in their lives, And in their death they were not divided;\nThey were swifter than eagles, \nThey were stronger than lions.”",
+					"points": 30
+				},
+				{
+					"question": "What does the Song of the Bow say about the beauty of Israel?",
+					"answer": "“The beauty of Israel is slain on your high places!\nHow the mighty have fallen! Tell it not in Gath,\nProclaim it not in the streets of Ashkelon— \nLest the daughters of the Philistines rejoice,\nLest the daughters of the uncircumcised triumph.”",
+					"points": 30
+				},
+				{
+					"question": "What does the Song of the Bow say to the daughters of Israel?",
+					"answer": "“O daughters of Israel, weep over Saul,\nWho clothed you in scarlet, with luxury; \nWho put ornaments of gold on your apparel.”",
+					"points": 30
+				},
+				{
+					"question": "What does the Song of the Bow say to the mountains of Gilboa?",
+					"answer": "“O mountains of Gilboa,\nLet there be no dew nor rain upon you, Nor fields of offerings.\nFor the shield of the mighty is cast away there! The shield of Saul, not anointed with oil.\nFrom the blood of the slain, From the fat of the mighty,\nThe bow of Jonathan did not turn back,\nAnd the sword of Saul did not return empty.”",
+					"points": 30
+				},
+				{
+					"question": "What festival was being observed during Jesus’s final visit to Jerusalem?",
+					"answer": "The Feast of Passover or Pesach",
+					"points": 10
+				},
+				{
+					"question": "What happened at the hill of Ammah?",
+					"answer": "Joab and Abner struck a truce to end the bloodshed between Israel and Judah which they had begun at the pool of Gibeon",
+					"points": 20
+				},
+				{
+					"question": "What happened in the story of the two sons of the wise woman of Tekoa?",
+					"answer": "One son killed the other, and now the law required that the second son be put to death, which would leave the woman childless and alone without an heir",
+					"points": 30
+				},
+				{
+					"question": "What happened to David in Hebron?",
+					"answer": "The men of Judah came and anointed him king over Judah",
+					"points": 20
+				},
+				{
+					"question": "What happened to the house of Obed-Edom as a result of the ark remaining there?",
+					"answer": "“The LORD has blessed the house of Obed-Edom and all that belongs to him, because of the ark of God.”",
+					"points": 20
+				},
+				{
+					"question": "What happened to Uzzah when he reached out his hand to steady the ark?",
+					"answer": "“God struck him there for his error; and he died there by the ark of God.”",
+					"points": 20
+				},
+				{
+					"question": "What happened when Bathsheba’s mourning period was over?",
+					"answer": "“and when her mourning was over, David sent and brought her to his house, and she became his wife and bore him a son.”",
+					"points": 30
+				},
+				{
+					"question": "What happened while David remained in Jerusalem?",
+					"answer": "“Then it happened one evening that David arose from his bed and walked on the roof of the king’s house. And from the roof he saw a woman bathing, and the woman was very beautiful to behold.”",
+					"points": 30
+				},
+				{
+					"question": "What instruction did David give his commanders concerning Absalom?",
+					"answer": "“Now the king had commanded Joab, Abishai, and Ittai, saying, “Deal gently for my sake with the young man Absalom.”",
+					"points": 20
+				},
+				{
+					"question": "What instruction did David give to Zadok upon his flight from Jerusalem?",
+					"answer": "“Carry the ark of God back into the city. If I find favor in the eyes of the LORD, He will bring me back and show me both it and His dwelling place. But if He says thus: ‘I have no delight in you,’ here I am, let Him do to me as seems good to Him.”",
+					"points": 30
+				},
+				{
+					"question": "What instructions did Abner give to Asahel after confirming his identity?",
+					"answer": "“Turn aside to your right hand or to your left, and lay hold on one of the young men and take his armor for yourself.”",
+					"points": 30
+				},
+				{
+					"question": "What instructions did David give to Joab and the people with him in response to the death of Abner?",
+					"answer": "“Tear your clothes, gird yourselves with sackcloth, and mourn for Abner.”",
+					"points": 20
+				},
+				{
+					"question": "What instructions did David give to Joab concerning Uriah in battle?",
+					"answer": "“Set Uriah in the forefront of the hottest battle, and retreat from him, that he may be struck down and die.”",
+					"points": 30
+				},
+				{
+					"question": "What instructions did God give to David the second time about confronting the Philistines in II Samuel chapter 5?",
+					"answer": "“You shall not go up; circle around behind them, and come upon them in front of the mulberry trees. And it shall be, when you hear the sound of marching in the tops of the mulberry trees, then you shall advance quickly. For then the LORD will go out before you to strike the camp of the Philistines.”",
+					"points": 30
+				},
+				{
+					"question": "What instructions did Joab give the messenger to tell the king if he expressed displeasure with the recklessness of the battle?",
+					"answer": "“then you shall say, ‘Your servant Uriah the Hittite is dead also.’ ”",
+					"points": 20
+				},
+				{
+					"question": "What is death on a cross called?",
+					"answer": "Crucifixion",
+					"points": 10
+				},
+				{
+					"question": "What is Jesus called in John 1:1?",
+					"answer": "“The Word”",
+					"points": 10
+				},
+				{
+					"question": "What is John chapter 17 commonly known as?",
+					"answer": "Jesus’s High Priestly prayer",
+					"points": 10
+				},
+				{
+					"question": "What is peculiar about the opening of II Samuel chapter eleven?",
+					"answer": "In the season where kings went out to battle, David sent out Joab and all of Israel, but the king himself remained in Jerusalem",
+					"points": 20
+				},
+				{
+					"question": "What is striking about David’s lament over Absalom?",
+					"answer": "Despite his son’s betrayal, David wishes that he had died in his son’s place",
+					"points": 20
+				},
+				{
+					"question": "What is the formula for water baptism?",
+					"answer": "“In the name of the Father, and of the Son and of the Holy Ghost.”",
+					"points": 20
+				},
+				{
+					"question": "What is the last action David models in the book of II Samuel?",
+					"answer": "Repentance",
+					"points": 10
+				},
+				{
+					"question": "What is the longest word in the Bible?",
+					"answer": "Maher-shalal-hash-baz",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of “epistle”?",
+					"answer": "Letter",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of Golgotha?",
+					"answer": "Place of the skull",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of Jireh?",
+					"answer": "“The Lord sees my need and provides”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of Shalom?",
+					"answer": "“Peace”",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of the name Bathsheba?",
+					"answer": "“Daughter of an oath”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of the name David?",
+					"answer": "“Beloved”",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of the name Israel?",
+					"answer": "“I have striven with God and with man and have prevailed”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of the name Jedidiah?",
+					"answer": "“Beloved of the Lord”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of the name Maher-shalal-hash-baz?",
+					"answer": "“Swift are the spoils, speedy is the plunder”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of the name Mephibosheth?",
+					"answer": "“Exterminating the idol”",
+					"points": 20
+				},
+				{
+					"question": "What is the meaning of the name Nathan?",
+					"answer": "“Giver”",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of the name Shear-Jashub?",
+					"answer": "“The remnant shall return” [to Jerusalem]",
+					"points": 10
+				},
+				{
+					"question": "What is the meaning of the word Jerusalem?",
+					"answer": "“City of peace”",
+					"points": 10
+				},
+				{
+					"question": "What is the message called in which Jesus shared the Beatitudes?",
+					"answer": "The Sermon on the Mount",
+					"points": 10
+				},
+				{
+					"question": "What is the role of a prophet according to Genesis 20:7?",
+					"answer": "To make intercession",
+					"points": 10
+				},
+				{
+					"question": "What issued forth when Jesus was pierced with a spear?",
+					"answer": "Blood and water",
+					"points": 10
+				},
+				{
+					"question": "What matter caused disunity between Ishbosheth and Abner?",
+					"answer": "Ishbosheth confronted Abner about his relations with Saul’s concubine, Rizpah",
+					"points": 20
+				},
+				{
+					"question": "What message did Bathsheba send to David in II Samuel 11:5?",
+					"answer": "“I am with child.”",
+					"points": 20
+				},
+				{
+					"question": "What message did David send to Joab in II Samuel 11:6?",
+					"answer": "“Send me Uriah the Hittite.”",
+					"points": 20
+				},
+				{
+					"question": "What name is used to describe Heaven in Ephesians 5:5?",
+					"answer": "“The kingdom of Christ and God”",
+					"points": 10
+				},
+				{
+					"question": "What name is used to describe Heaven in Hebrews 11:10?",
+					"answer": "“The city”",
+					"points": 10
+				},
+				{
+					"question": "What name is used to describe Heaven in Hebrews 11:16?",
+					"answer": "“A heavenly country”",
+					"points": 10
+				},
+				{
+					"question": "What name is used to describe Heaven in II Corinthians 12:4?",
+					"answer": "Paradise",
+					"points": 10
+				},
+				{
+					"question": "What name was used to describe Heaven in Isaiah 57:15?",
+					"answer": "“The high and holy place”",
+					"points": 10
+				},
+				{
+					"question": "What promise did God make with David concerning David’s son who would rule after him?",
+					"answer": "That God’s mercy would not depart from him the way it had from Saul",
+					"points": 20
+				},
+				{
+					"question": "What promise did Joab make to the woman of Abel?",
+					"answer": "That if the city would deliver Sheba to him, he would depart without destroying the city",
+					"points": 20
+				},
+				{
+					"question": "What reason did Absalom give for traveling to Hebron?",
+					"answer": "“Please, let me go to Hebron and pay the vow which I made to the LORD. For your servant took a vow while I dwelt at Geshur in Syria, saying, ‘If the LORD indeed brings me back to Jerusalem, then I will serve the LORD.’ ”",
+					"points": 30
+				},
+				{
+					"question": "What son of Saul did Abner try to install as king after Saul’s death?",
+					"answer": "Ishbosheth",
+					"points": 10
+				},
+				{
+					"question": "What sort of bath was Bathsheba taking when David saw her?",
+					"answer": "A ritual bath to cleanse her from impurities",
+					"points": 20
+				},
+				{
+					"question": "What was Abner’s response to Ishbosheth’s confrontation?",
+					"answer": "“Am I a dog’s head that belongs to Judah? Today I show loyalty to the house of Saul your father, to his brothers, and to his friends, and have not delivered you into the hand of David; and you charge me today with a fault concerning this woman? May God do so to Abner, and more also, if I do not do for David as the LORD has sworn to him— to transfer the kingdom from the house of Saul, and set up the throne of David over Israel and over Judah, from Dan to Beersheba.”",
+					"points": 30
+				},
+				{
+					"question": "What was David’s first question about the battle?",
+					"answer": "“Is the young man Absalom safe?”",
+					"points": 20
+				},
+				{
+					"question": "What was David’s message to the men of Jabesh Gilead upon finding out they had buried Saul?",
+					"answer": "“You are blessed of the LORD, for you have shown this kindness to your lord, to Saul, and have buried him. And now may the LORD show kindness and truth to you. I also will repay you this kindness, because you have done this thing. Now therefore, let your hands be strengthened, and be valiant; for your master Saul is dead, and also the house of Judah has anointed me king over them.”",
+					"points": 30
+				},
+				{
+					"question": "What was David’s reply to Abishai’s request to kill Shimei?",
+					"answer": "“What have I to do with you, you sons of Zeruiah?”",
+					"points": 20
+				},
+				{
+					"question": "What was David’s requirement in order to make covenant with Abner?",
+					"answer": "“you shall not see my face unless you first bring Michal, Saul’s daughter, when you come to see my face.”",
+					"points": 20
+				},
+				{
+					"question": "What was David’s response when he heard of Rizpah’s actions?",
+					"answer": "He took the bones of Saul and Jonathan from Jabesh Gilead and–together with the bones of those hung by the Gibeonites–he buried them in the tomb of Saul’s father, Kish.",
+					"points": 20
+				},
+				{
+					"question": "What was done with the body of Absalom?",
+					"answer": "They cast him into a large pit in the woods",
+					"points": 20
+				},
+				{
+					"question": "What was Jesus’ response concerning paying taxes to the Roman government?",
+					"answer": "“And Jesus answered and said to them, ‘Render to Caesar the things that are Caesar’s, and to God the things that are God’s.’ “",
+					"points": 20
+				},
+				{
+					"question": "What was Jesus’s charge against the moneychangers when He cleansed the temple?",
+					"answer": "“It is written, ‘My house is a house of prayer,’ but you have made it a ‘den of thieves.’ ”",
+					"points": 20
+				},
+				{
+					"question": "What was Jesus’s response to Martha’s concern about the stench of death?",
+					"answer": "“Did I not say to you that if you would believe you would see the glory of God?”",
+					"points": 20
+				},
+				{
+					"question": "What was Jesus’s response to the woman caught in the act of adultery?",
+					"answer": "“Neither do I condemn you; go and sin no more.”",
+					"points": 20
+				},
+				{
+					"question": "What was Jesus's first recorded miracle?",
+					"answer": "Turning the water into wine",
+					"points": 10
+				},
+				{
+					"question": "What was Jesus's second recorded miracle?",
+					"answer": "The healing of the nobleman’s son",
+					"points": 10
+				},
+				{
+					"question": "What was Peter’s response to denying Christ?",
+					"answer": "He wept bitterly",
+					"points": 10
+				},
+				{
+					"question": "What was Peter’s response to Jesus wanting to wash his feet?",
+					"answer": "“You shall never wash my feet!”",
+					"points": 10
+				},
+				{
+					"question": "What was Sarah’s reaction when she heard she was to have a son within the next year?",
+					"answer": "She laughed",
+					"points": 10
+				},
+				{
+					"question": "What was the advice of Ahithophel to Absalom?",
+					"answer": "“Now let me choose twelve thousand men, and I will arise and pursue David tonight. I will come upon him while he is weary and weak, and make him afraid. And all the people who are with him will flee, and I will strike only the king. Then I will bring back all the people to you. When all return except the man whom you seek, all the people will be at peace.”",
+					"points": 30
+				},
+				{
+					"question": "What was the advice of Hushai to Absalom?",
+					"answer": "“Therefore I advise that all Israel be fully gathered to you, from Dan to Beersheba, like the sand that is by the sea for multitude, and that you go to battle in person. So we will come upon him in some place where he may be found, and we will fall on him as the dew falls on the ground. And of him and all the men who are with him there shall not be left so much as one.”",
+					"points": 30
+				},
+				{
+					"question": "What was the area near the pool of Gibeon renamed after the confrontation between Joab’s forces and Abner’s forces?",
+					"answer": "The Field of Sharp Swords",
+					"points": 20
+				},
+				{
+					"question": "What was the capital of the kingdom of Israel?",
+					"answer": "Samaria",
+					"points": 10
+				},
+				{
+					"question": "What was the capital of the kingdom of Judah?",
+					"answer": "Jerusalem",
+					"points": 10
+				},
+				{
+					"question": "What was the fate of Lot’s wife for looking back at Sodom?",
+					"answer": "She was turned into a pillar of salt",
+					"points": 10
+				},
+				{
+					"question": "What was the impact of the war between the house of Saul and the house of David?",
+					"answer": "“But David grew stronger and stronger, and the house of Saul grew weaker and weaker.”",
+					"points": 20
+				},
+				{
+					"question": "What was the jubilant exclamation of the crowds upon Jesus’s triumphal entry to Jerusalem?",
+					"answer": "“Blessed is the King who comes in the name of the LORD!’ Peace in heaven and glory in the highest!”",
+					"points": 20
+				},
+				{
+					"question": "What was the name of the daughter of Absalom?",
+					"answer": "Tamar",
+					"points": 10
+				},
+				{
+					"question": "What was the name of the first wife of King Ahasuerus?",
+					"answer": "Vashti",
+					"points": 10
+				},
+				{
+					"question": "What was the name of the place that Jesus went to pray the night of his arrest?",
+					"answer": "The Garden of Gethsemane",
+					"points": 10
+				},
+				{
+					"question": "What was the name of the son conceived in David’s comforting of Bathsheba following the loss of their first child?",
+					"answer": "Solomon",
+					"points": 10
+				},
+				{
+					"question": "What was the name of the son of Jonathan?",
+					"answer": "Mephibosheth, who became lame when he was dropped by his nurse in her haste to flee after the death of his father and grandfather",
+					"points": 20
+				},
+				{
+					"question": "What was the name of the wife of Moses?",
+					"answer": "Zipporah",
+					"points": 10
+				},
+				{
+					"question": "What was the reaction of the Samaritan woman after learning of Jesus’s Messiahship?",
+					"answer": "She left her waterpot and went to the city to tell of Him",
+					"points": 20
+				},
+				{
+					"question": "What was the response of Abishai to Shimei cursing David?",
+					"answer": "“Why should this dead dog curse my lord the king? Please, let me go over and take off his head!”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of Ahithophel to his advice being rejected?",
+					"answer": "“Now when Ahithophel saw that his advice was not followed, he saddled a donkey, and arose and went home to his house, to his city. Then he put his household in order, and hanged himself, and died; and he was buried in his father’s tomb.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Amnon after he sinned against Tamar?",
+					"answer": "“Then Amnon hated her exceedingly, so that the hatred with which he hated her was greater than the love with which he had loved her. And Amnon said to her, “Arise, be gone!”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Bathsheba to Uriah’s death?",
+					"answer": "she mourned for her husband",
+					"points": 10
+				},
+				{
+					"question": "What was the response of David and his men to the news of the deaths of Saul and Jonathan?",
+					"answer": "“they mourned and wept and fasted until evening for Saul and for Jonathan his son, for the people of the LORD and for the house of Israel, because they had fallen by the sword.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David once he confirmed the wise woman of Tekoa had been sent by Joab?",
+					"answer": "He relented and sent Joab to retrieve Absalom",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David to learning Bathsheba’s identity?",
+					"answer": "“Then David sent messengers, and took her”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David to Mephibosheth?",
+					"answer": "“Do not fear, for I will surely show you kindness for Jonathan your father’s sake, and will restore to you all the land of Saul your grandfather; and you shall eat bread at my table continually.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to Michal’s charge against him?",
+					"answer": "“It was before the LORD, who chose me instead of your father and all his house, to appoint me ruler over the people of the LORD, over Israel. Therefore I will play music before the LORD. And I will be even more undignified than this, and will be humble in my own sight. But as for the maidservants of whom you have spoken, by them I will be held in honor.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to Nathan after the prophet delivered the Lord’s rebuke?",
+					"answer": "“I have sinned against the LORD.”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David to the Amalekite who brought the news of Saul and Jonathan’s deaths?",
+					"answer": "“How was it you were not afraid to put forth your hand to destroy the LORD’s anointed?” Then David called one of the young men and said, “Go near, and execute him!” And he struck him so that he died. So David said to him, “Your blood is on your own head, for your own mouth has testified against you, saying, ‘I have killed the LORD’s anointed.’ ”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to the death of Uzzah?",
+					"answer": "“And David became angry because of the LORD’s outbreak against Uzzah; and he called the name of the place Perez Uzzah to this day. David was afraid of the LORD that day”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to the Gibeonites’ request?",
+					"answer": "“I will give them.”",
+					"points": 10
+				},
+				{
+					"question": "What was the response of David to the messenger who brought the news of Uriah’s death?",
+					"answer": "“Thus you shall say to Joab: ‘Do not let this thing displease you, for the sword devours one as well as another. Strengthen your attack against the city, and overthrow it.’ So encourage him.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to the news of Adonijah’s conspiracy?",
+					"answer": "“As the LORD lives, who has redeemed my life from every distress, just as I swore to you by the LORD God of Israel, saying, ‘Assuredly Solomon your son shall be king after me, and he shall sit on my throne in my place,’ so I certainly will do this day.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to the story Nathan told him in II Samuel chapter twelve?",
+					"answer": "“So David’s anger was greatly aroused against the man, and he said to Nathan, “As the LORD lives, the man who has done this shall surely die! And he shall restore fourfold for the lamb, because he did this thing and because he had no pity.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David to the story told by the wise woman of Tekoa?",
+					"answer": "He assured her that the second son should not be put to death",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David to the wrong done to Tamar by Amnon?",
+					"answer": "He was very angry, but no action was undertaken by the king",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David when asked by the servants why he arose and ate after the baby’s death?",
+					"answer": "“And he said, “While the child was alive, I fasted and wept; for I said, ‘Who can tell whether the LORD will be gracious to me, that the child may live?’ But now he is dead; why should I fast? Can I bring him back again? I shall go to him, but he shall not return to me.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of David’s men after he nearly died in battle?",
+					"answer": "“You shall go out no more with us to battle, lest you quench the lamp of Israel.”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of David’s people to his insistence that he fight alongside them?",
+					"answer": "“You shall not go out! For if we flee away, they will not care about us; nor if half of us die, will they care about us. But you are worth ten thousand of us now. For you are now more help to us in the city.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Ittai the Gittite when David instructed him to remain in Jerusalem?",
+					"answer": "“As the LORD lives, and as my lord the king lives, surely in whatever place my lord the king shall be, whether in death or life, even there also your servant will be.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Mephibosheth when he appeared before David?",
+					"answer": "“Here is your servant!”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of Michal to David’s behavior while transporting the ark?",
+					"answer": "“Now as the ark of the LORD came into the City of David, Michal, Saul’s daughter, looked through a window and saw King David leaping and whirling before the LORD; and she despised him in her heart.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Rizpah to the death of her sons?",
+					"answer": "“Now Rizpah the daughter of Aiah took sackcloth and spread it for herself on the rock, from the beginning of harvest until the late rains poured on them from heaven.\n And she did not allow the birds of the air to rest on them by day nor the beasts of the field by night.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of the Lord to all David had done to Uriah and Bathsheba?",
+					"answer": "“But the thing that David had done displeased the LORD.”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of those who Jesus revealed Himself to on the road to Emmaus?",
+					"answer": "“Did not our heart burn within us while He talked with us on the road, and while He opened the Scriptures to us?”",
+					"points": 20
+				},
+				{
+					"question": "What was the response of Uriah when asked why he would not go down to his house?",
+					"answer": "“The ark and Israel and Judah are dwelling in tents, and my lord Joab and the servants of my lord are encamped in the open fields. Shall I then go to my house to eat and drink, and to lie with my wife? As you live, and as your soul lives, I will not do this thing.”",
+					"points": 30
+				},
+				{
+					"question": "What was the response of Ziba when seeing David during the king’s flight from Jerusalem?",
+					"answer": "“I humbly bow before you, that I may find favor in your sight, my lord, O king!”",
+					"points": 20
+				},
+				{
+					"question": "What was the response to Abner’s death?",
+					"answer": "“When Saul’s son heard that Abner had died in Hebron, he lost heart, and all Israel was troubled.”",
+					"points": 20
+				},
+				{
+					"question": "What was the response to Paul’s prayer for the thorn to be removed?",
+					"answer": "“My grace is sufficient for you”",
+					"points": 20
+				},
+				{
+					"question": "When did David’s firstborn child with Bathsheba die?",
+					"answer": "On the seventh day after its birth",
+					"points": 10
+				},
+				{
+					"question": "When did the Church of God adopt our Declaration of Faith?",
+					"answer": 1948,
+					"points": 10
+				},
+				{
+					"question": "Where did Absalom go after killing Amnon?",
+					"answer": "He fled to Geshur, the land of his mother, which was ruled by his grandfather, Talmai",
+					"points": 20
+				},
+				{
+					"question": "Where did Absalom proclaim himself king?",
+					"answer": "Hebron",
+					"points": 10
+				},
+				{
+					"question": "Where did Jesus tell Peter that he would find the money to pay their taxes?",
+					"answer": "In the mouth of a fish",
+					"points": 10
+				},
+				{
+					"question": "Where did the Lord tell David to go when he went up to the cities of Judah?",
+					"answer": "To Hebron",
+					"points": 10
+				},
+				{
+					"question": "Where is Christ today?",
+					"answer": "At the right hand of the throne of God",
+					"points": 20
+				},
+				{
+					"question": "Where is Jesus today?",
+					"answer": "at the right hand of God the Father",
+					"points": 10
+				},
+				{
+					"question": "Where was Asahel buried?",
+					"answer": "In his father’s tomb in Bethlehem",
+					"points": 20
+				},
+				{
+					"question": "Where was David awaiting news about his son?",
+					"answer": "Between the gates, the very place of Absalom’s betrayal of him",
+					"points": 20
+				},
+				{
+					"question": "Where was Jesus crucified?",
+					"answer": "Golgotha",
+					"points": 10
+				},
+				{
+					"question": "Where was Rachel buried?",
+					"answer": "on the roadside near Ephrath, which is Bethlehem",
+					"points": 20
+				},
+				{
+					"question": "Where was the battle between the forces of Absalom and David?",
+					"answer": "The woods of Ephraim",
+					"points": 10
+				},
+				{
+					"question": "Where were the Philistines encamped in II Samuel chapter 5?",
+					"answer": "the Valley of Rephaim",
+					"points": 10
+				},
+				{
+					"question": "Where would Absalom stand each morning to intercept those who sought the king?",
+					"answer": "by the way to the gate",
+					"points": 10
+				},
+				{
+					"question": "Which body of water listed in the Bible was parted by three different men?",
+					"answer": "The Jordan River",
+					"points": 10
+				},
+				{
+					"question": "Which disciple betrayed Jesus?",
+					"answer": "Judas Iscariot",
+					"points": 10
+				},
+				{
+					"question": "Which disciple denied Jesus thrice on the night of his betrayal?",
+					"answer": "Peter",
+					"points": 10
+				},
+				{
+					"question": "Which disciple expressed concern about feeding the multitude in John chapter six?",
+					"answer": "Philip",
+					"points": 10
+				},
+				{
+					"question": "Which disciple followed Jesus to calvary?",
+					"answer": "John",
+					"points": 10
+				},
+				{
+					"question": "Which disciple found the boy with five barley loaves and two small fish?",
+					"answer": "Andrew",
+					"points": 10
+				},
+				{
+					"question": "Which disciple refused to believe in the resurrection until he saw Jesus’s wounds for himself?",
+					"answer": "Thomas",
+					"points": 10
+				},
+				{
+					"question": "Which disciple walked on water?",
+					"answer": "Peter",
+					"points": 10
+				},
+				{
+					"question": "Which disciple was known as the one whom Jesus loved?",
+					"answer": "John",
+					"points": 10
+				},
+				{
+					"question": "Which of David’s men of valor defended an entire lentil field from Philistines singlehandedly?",
+					"answer": "Shammah",
+					"points": 10
+				},
+				{
+					"question": "Which of David’s men of valor killed a lion in the midst of a pit on a snowy day?",
+					"answer": "Benaiah",
+					"points": 10
+				},
+				{
+					"question": "Which of David’s men of valor lifted his sword and killed 300 men?",
+					"answer": "Abishai",
+					"points": 10
+				},
+				{
+					"question": "Which of David’s men of valor was armorbearer to Joab?",
+					"answer": "Naharai the Beerothite",
+					"points": 10
+				},
+				{
+					"question": "Which son of David exalted himself to be king in David’s last days?",
+					"answer": "Adonijah",
+					"points": 10
+				},
+				{
+					"question": "Which son of David loved Tamar, David’s daughter?",
+					"answer": "Amnon",
+					"points": 10
+				},
+				{
+					"question": "Which son of David was Tamar’s full biological brother?",
+					"answer": "Absalom",
+					"points": 10
+				},
+				{
+					"question": "Which son of Zeruiah pursued Abner?",
+					"answer": "All three pursued him, but Asahel was fastest as he was as fleet-footed as a wild gazelle",
+					"points": 20
+				},
+				{
+					"question": "Which son of Zeruiah saved David’s life when he was nearly killed in battle by a Philistine giant?",
+					"answer": "Abishai",
+					"points": 10
+				},
+				{
+					"question": "Which son of Zeruiah was over the armies of David?",
+					"answer": "Joab",
+					"points": 10
+				},
+				{
+					"question": "Which two wives were with David when he came to Hebron?",
+					"answer": "“Ahinoam the Jezreelitess, and Abigail the widow of Nabal the Carmelite.”",
+					"points": 20
+				},
+				{
+					"question": "While on his deathbed, who did David charge Solomon to kill?",
+					"answer": "Joab and Shimei",
+					"points": 10
+				},
+				{
+					"question": "Who after meeting Christ became the first proselytizer?",
+					"answer": "Anna (Luke 2:38)",
+					"points": 10
+				},
+				{
+					"question": "Who anointed Solomon as king over Israel?",
+					"answer": "Zadok the priest",
+					"points": 10
+				},
+				{
+					"question": "Who attempted to install a successor to reign after King Saul?",
+					"answer": "Abner the son of Ner",
+					"points": 20
+				},
+				{
+					"question": "Who baptized Jesus?",
+					"answer": "John the Baptist",
+					"points": 10
+				},
+				{
+					"question": "Who buried Abraham?",
+					"answer": "Isaac and Ishmael",
+					"points": 10
+				},
+				{
+					"question": "Who buried Moses?",
+					"answer": "God",
+					"points": 10
+				},
+				{
+					"question": "Who did Absalom make captain of his army?",
+					"answer": "“Absalom made Amasa captain of the army instead of Joab”",
+					"points": 20
+				},
+				{
+					"question": "Who did David make captains over his army?",
+					"answer": "“David sent out one third of the people under the hand of Joab, one third under the hand of Abishai the son of Zeruiah, Joab’s brother, and one third under the hand of Ittai the Gittite.”",
+					"points": 30
+				},
+				{
+					"question": "Who did David provide to the Gibeonites to be put to death?",
+					"answer": "Two sons of Rizpah, and five grandsons of Saul",
+					"points": 20
+				},
+				{
+					"question": "Who did David spare from the Gibeonites?",
+					"answer": "Mephibosheth the son of Jonathan",
+					"points": 10
+				},
+				{
+					"question": "Who did Peter proclaim Jesus to be?",
+					"answer": "“The Christ of God”",
+					"points": 10
+				},
+				{
+					"question": "Who did the crowds say that Jesus was?",
+					"answer": "John the Baptist or Elijah (Luke 9:19)",
+					"points": 10
+				},
+				{
+					"question": "Who did the Lord say would build His house?",
+					"answer": "The seed of David",
+					"points": 10
+				},
+				{
+					"question": "Who finally orchestrated the reunion between David and Absalom?",
+					"answer": "Joab",
+					"points": 10
+				},
+				{
+					"question": "Who informed David of the deaths of Saul and Jonathan?",
+					"answer": "An Amalekite",
+					"points": 10
+				},
+				{
+					"question": "Who is buried in Machpelah?",
+					"answer": "Abraham and Sarah, Isaac and Rebekah and Jacob and Leah",
+					"points": 20
+				},
+				{
+					"question": "Who is referred to as the “forerunner” of Christ?",
+					"answer": "John the Baptist",
+					"points": 10
+				},
+				{
+					"question": "Who is the first man mentioned in the genealogy of Christ as recorded in Matthew?",
+					"answer": "Abraham",
+					"points": 10
+				},
+				{
+					"question": "Who is the only one of the matriarchs and patriarchs who is not buried in Machpelah?",
+					"answer": "Rachel",
+					"points": 10
+				},
+				{
+					"question": "Who killed Absalom?",
+					"answer": "Joab",
+					"points": 10
+				},
+				{
+					"question": "Who killed Ishbosheth?",
+					"answer": "“the sons of Rimmon the Beerothite, Rechab and Baanah”",
+					"points": 20
+				},
+				{
+					"question": "Who killed Sisera?",
+					"answer": "Jael",
+					"points": 10
+				},
+				{
+					"question": "Who killed the giant of Gath who had six toes on each foot and six fingers on each hand?",
+					"answer": "Jonathan, David’s nephew",
+					"points": 10
+				},
+				{
+					"question": "Who met at the pool of Gibeon?",
+					"answer": "Abner son of Ner and the servants of Ishbosheth, and Joab son of Zeruiah and the servants of David",
+					"points": 20
+				},
+				{
+					"question": "Who mounted a rebellion against David after Absalom?",
+					"answer": "Sheba",
+					"points": 10
+				},
+				{
+					"question": "Who perceived that David was distressed by Absalom’s absence?",
+					"answer": "Joab",
+					"points": 10
+				},
+				{
+					"question": "Who was Absalom’s chief advisor and councilor?",
+					"answer": "Ahithophel, the grandfather of Bathsheba",
+					"points": 10
+				},
+				{
+					"question": "Who was it that David saw bathing from the palace roof?",
+					"answer": "Bathsheba, the daughter of Eliam, the wife of Uriah the Hittite",
+					"points": 20
+				},
+				{
+					"question": "Who was originally tasked to utterly destroy the Amalekites?",
+					"answer": "King Saul",
+					"points": 10
+				},
+				{
+					"question": "Who was the first Apostle martyred?",
+					"answer": "James, the brother of John",
+					"points": 10
+				},
+				{
+					"question": "Who was the first Church of God missionary?",
+					"answer": "Rebecca Barr",
+					"points": 10
+				},
+				{
+					"question": "Who was the first general overseer of the Church of God?",
+					"answer": "A.J. Tomlinson",
+					"points": 10
+				},
+				{
+					"question": "Who was the first person that Jesus raised from the dead?",
+					"answer": "The son of the widow of Nain",
+					"points": 10
+				},
+				{
+					"question": "Who was the first teacher at Lee University?",
+					"answer": "Nora Chambers",
+					"points": 10
+				},
+				{
+					"question": "Who was the first to arrive at Jesus's empty tomb after they raced there in John 20?",
+					"answer": "John",
+					"points": 10
+				},
+				{
+					"question": "Who was the first to enter Jesus’s empty tomb?",
+					"answer": "Peter",
+					"points": 10
+				},
+				{
+					"question": "Who was the first to see the risen Christ?",
+					"answer": "Mary Magdalene",
+					"points": 10
+				},
+				{
+					"question": "Which son of David attempted to usurp the throne in David's old age?",
+					"answer": "Adonijah",
+					"points": 10
+				},
+				{
+					"question": "Whose tomb did Peter and John visit on the morning of the resurrection?",
+					"answer": "Joseph of Arimathea",
+					"points": 10
+				},
+				{
+					"question": "Why did Jesus call Peter 'Simon' in John 21:16?",
+					"answer": "'Simon, son of Jonah, do you love Me more than these?'",
+					"points": 10
+				},
+				{
+					"question": "Why did Jesus rebuke the two disciples on the road to Emmaus?",
+					"answer": "For being foolish and slow of heart to believe in all that the prophets had spoken",
+					"points": 20
+				},
+				{
+					"question": "Why did the pharisees question Jesus about healing on the sabbath?",
+					"answer": "They believed it was unlawful work on the sabbath",
+					"points": 20
+				},
+				{
+					"question": "Why did the wise men visit Jesus after his birth?",
+					"answer": "To pay homage and bring gifts",
+					"points": 20
+				},
+				{
+					"question": "Why did Thomas doubt Jesus's resurrection at first?",
+					"answer": "He wasn’t present when Jesus first appeared to the other disciples",
+					"points": 20
+		},
+				{
+					"question": "Why was David afraid to take the census of Israel?",
+					"answer": "He was afraid of the LORD's wrath and the resulting plague",
+					"points": 20
+				},
+				{
+					"question": "Why was Elizabeth, John the Baptist's mother, filled with the Holy Spirit?",
+					"answer": "Because the baby leaped in her womb at Mary's greeting",
+					"points": 20
+				},
+				{
+					"question": "Why was it significant that David danced before the Lord with all his might?",
+					"answer": "It showed his wholehearted devotion and worship before God",
+					"points": 20
+				},
+				{
+					"question": "Why wouldn’t David build a house for the Lord?",
+					"answer": "Because he was a man of war and had shed blood",
+					"points": 20
+				},
+				{
+					"question": "With what instruments did David praise God during the transport of the ark?",
+					"answer": "With all his might, using harps, stringed instruments, tambourines, cisterns, and cymbals",
+					"points": 20
+				}
+			];
+
+			while (questions.length < 20) {
+				questions.push({ question: `Sample question ${questions.length + 1}?`, answer: "Sample", points: 5 });
+			}
+
+			let currentQuestionIndex = 0;
+			let totalPoints = 0;
+			let userName = '';
+			let buzzed = false;
+			let questionRead = false;
+			let speaking = false;
+			let timer = null;
+			let timerSeconds = 30;
+			let questionOrder = [];
+
+			function speakText(text, onend) {
+				if ('speechSynthesis' in window) {
+					window.speechSynthesis.cancel(); // Clear any previous queue
+					const utter = new SpeechSynthesisUtterance(text);
+					speaking = true;
+					utter.onend = function () {
+						speaking = false;
+						questionRead = true;
+						if (typeof onend === 'function') onend();
+					};
+					window.speechSynthesis.speak(utter);
+				} else {
+					// Typewriter effect for question display
+					const questionCountElem = document.getElementById('questionCount');
+					questionCountElem.textContent = '';
+					let i = 0;
+					speaking = true;
+					questionRead = false;
+					if (typewriterInterval) clearInterval(typewriterInterval);
+					typewriterInterval = setInterval(function () {
+						if (buzzed) {
+							clearInterval(typewriterInterval);
+							typewriterInterval = null;
+							speaking = false;
+							questionRead = false;
+							if (typeof onend === 'function') onend();
+							return;
+						}
+						if (i < text.length) {
+							questionCountElem.textContent += text.charAt(i);
+							i++;
+						} else {
+							clearInterval(typewriterInterval);
+							typewriterInterval = null;
+							speaking = false;
+							questionRead = true;
+							if (typeof onend === 'function') onend();
+						}
+					}, 40); // Adjust speed as needed
+				}
+			}
+
+			function shuffleQuestions() {
+				let arr = Array.from({ length: questions.length }, (_, i) => i);
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(Math.random() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr.slice(0, 20);
+			}
+
+			function showQuestion() {
+				if (timer) resetTimer();
+				if (currentQuestionIndex >= 20) {
+					endQuiz();
+					return;
+				}
+				document.getElementById('answerInput').value = '';
+				document.getElementById('result').textContent = '';
+				document.getElementById('questionCount').textContent = `Question ${currentQuestionIndex + 1} of 20`;
+				document.getElementById('answerInput').disabled = true;
+				document.getElementById('submitAnswer').disabled = true;
+				document.getElementById('recordBtn').disabled = true;
+				document.getElementById('buzzBtn').disabled = false;
+				document.getElementById('buzzBtn').textContent = '🚨 Buzz!';
+				document.getElementById('buzzBtn').style.background = '#ff416c';
+				document.getElementById('timerDisplay').textContent = '';
+				buzzed = false;
+				questionRead = false;
+				speaking = false;
+
+				let qIdx = questionOrder[currentQuestionIndex];
+				speakText(questions[qIdx].question);
+			}
+
+			function startTimer() {
+				let seconds = timerSeconds;
+				document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+				timer = setInterval(function () {
+					seconds--;
+					document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+					if (seconds <= 0) {
+						resetTimer();
+						if (buzzed && !document.getElementById('submitAnswer').disabled) {
+							checkAnswer(true);
+						}
+					}
+				}, 1000);
+			}
+
+			function resetTimer() {
+				if (timer) {
+					clearInterval(timer);
+					timer = null;
+				}
+				document.getElementById('timerDisplay').textContent = '';
+			}
+
+			function checkAnswer(autoSubmit = false) {
+				document.getElementById('answerInput').disabled = true;
+				document.getElementById('submitAnswer').disabled = true;
+				document.getElementById('buzzBtn').disabled = true;
+				resetTimer();
+
+				function normalize(str) {
+					return (str + '').replace(/[^a-zA-Z0-9 ]/g, '').toLowerCase().trim();
+				}
+
+				let qIdx = questionOrder[currentQuestionIndex];
+				const userAnswer = normalize(document.getElementById('answerInput').value);
+				const correctAnswer = normalize(questions[qIdx].answer);
+				let points = questions[qIdx].points;
+				let resultText = '';
+				let speakResult = '';
+
+				if (userAnswer === correctAnswer) {
+					totalPoints += points;
+					resultText = `Correct! (+${points} points)`;
+					speakResult = 'Correct!';
+				} else {
+					if (questionInterrupted) {
+						totalPoints -= points;
+						resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
+					} else {
+						resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
+					}
+					speakResult = 'Wrong! The correct answer is ' + questions[qIdx].answer;
+				}
+
+				document.getElementById('result').textContent = resultText;
+				speakText(speakResult, function () {
+					currentQuestionIndex++;
+					showQuestion();
+				});
+			}
+
+			function endQuiz() {
+				document.getElementById('quizScreen').style.display = 'none';
+				document.getElementById('scoreScreen').style.display = '';
+				document.getElementById('scoreResult').innerHTML = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
+			}
+
+			// FIXED: The user click now explicitly triggers a dummy speech event to "unlock" the audio engine
+			function startQuiz() {
+				const nameVal = document.getElementById('nameInput').value.trim();
+				if (nameVal.length === 0) {
+					alert('Please enter your name to start the quiz.');
+					return;
+				}
+
+				// Unlock Speech Synthesis
+				if ('speechSynthesis' in window) {
+					window.speechSynthesis.cancel();
+					const unlock = new SpeechSynthesisUtterance("");
+					window.speechSynthesis.speak(unlock);
+				}
+
+				userName = nameVal;
+				document.getElementById('nameScreen').style.display = 'none';
+				document.getElementById('quizScreen').style.display = '';
+				document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal;
+				currentQuestionIndex = 0;
+				totalPoints = 0;
+				questionOrder = shuffleQuestions();
+
+				setTimeout(showQuestion, 100);
+			}
+
+			document.getElementById('submitName').onclick = startQuiz;
+
+			document.getElementById('buzzBtn').onclick = function () {
+				if (!buzzed) {
+					buzzed = true;
+					document.getElementById('buzzBtn').textContent = 'Buzzed!';
+					document.getElementById('buzzBtn').classList.add('buzzed');
+					document.getElementById('answerInput').disabled = false;
+					document.getElementById('submitAnswer').disabled = false;
+					document.getElementById('recordBtn').disabled = false;
+					document.getElementById('answerInput').focus();
+					startTimer();
+					if (!questionRead && speaking) {
+						if ('speechSynthesis' in window) {
+							window.speechSynthesis.cancel();
+							speakText('Question Interrupted');
+						} else if (typewriterInterval) {
+							clearInterval(typewriterInterval);
+							typewriterInterval = null;
+						}
+						questionInterrupted = true;
+					} else {
+						questionInterrupted = false;
+					}
+				}
+			};
+
+			document.getElementById('submitAnswer').onclick = function () {
+				if (buzzed) checkAnswer();
+			};
+
+			let recognizing = false;
+			let recognition;
+			if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+				recognition = new SpeechRecognition();
+				recognition.lang = 'en-US';
+				recognition.onstart = function () {
+					recognizing = true;
+					document.getElementById('micStatus').textContent = '🎙️ Listening...';
+				};
+				recognition.onend = function () {
+					recognizing = false;
+					document.getElementById('micStatus').textContent = '';
+				};
+				recognition.onresult = function (event) {
+					document.getElementById('answerInput').value = event.results[0][0].transcript;
+				};
+				document.getElementById('recordBtn').onclick = function () {
+					if (recognizing) recognition.stop(); else recognition.start();
+				};
+			}
+
+			document.getElementById('restartBtn').onclick = function () {
+				location.reload(); // Simplest way to reset all states
+			};
+
+		});
+	</script>
+</body>
+</html>
