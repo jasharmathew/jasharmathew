@@ -2684,7 +2684,7 @@
 					speaking = true;
 					utter.onend = function () {
 						speaking = false;
-						questionRead = true;
+					//	questionRead = true;
 						if (typeof onend === 'function') onend();
 					};
 					window.speechSynthesis.speak(utter);
@@ -2862,6 +2862,7 @@
                     document.getElementById('answerInput').focus();
                     startTimer();
                     if (!questionRead) {
+                        questionInterrupted = true;
                         if (speaking) {
                             if ('speechSynthesis' in window) {
                                 window.speechSynthesis.cancel();
@@ -2871,7 +2872,6 @@
                                 typewriterInterval = null;
                             }
                         }
-                        questionInterrupted = true;
                     } else {
                         questionInterrupted = false;
                     }
