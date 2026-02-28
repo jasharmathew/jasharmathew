@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quiz App</title>
-	<style>
-		body {
-			font-family: Arial, sans-serif;
-			background-color: #f4f4f4;
-			/*background-image: url('data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f4f4f4"/><g opacity="0.12"><circle cx="20" cy="20" r="12" fill="%23007bff"/><rect x="50" y="10" width="18" height="18" rx="4" fill="%23ff416c"/><polygon points="40,60 50,75 30,75" fill="%2328a745"/><text x="10" y="70" font-size="18" fill="%23ff416c" font-family="Arial">?</text></g></svg>');*/
-			background-repeat: repeat;
-		}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            background:
+                linear-gradient(135deg, rgba(224,231,255,0.85) 0%, rgba(244,244,244,0.85) 40%, rgba(255,224,231,0.85) 100%),
+                url('https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .container {
             max-width: 500px;
@@ -22,82 +27,82 @@
             width: 100%;
         }
 
-		h1 {
-			text-align: center;
-		}
+        h1 {
+            text-align: center;
+        }
 
-		.question-count {
-			font-size: 1em;
-			color: #888;
-			margin-bottom: 10px;
-			text-align: center;
-		}
+        .question-count {
+            font-size: 1em;
+            color: #888;
+            margin-bottom: 10px;
+            text-align: center;
+        }
 
-		.answer-row {
-			display: flex;
-			gap: 8px;
-			margin-bottom: 10px;
-		}
+        .answer-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
 
-		.answer-input {
-			flex: 1;
-			padding: 14px 10px;
-			font-size: 1em;
-			border: 1px solid #ccc;
-			border-radius: 4px;
-			min-height: 60px;
-			height: 60px;
-			box-sizing: border-box;
-		}
+        .answer-input {
+            flex: 1;
+            padding: 14px 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            min-height: 60px;
+            height: 60px;
+            box-sizing: border-box;
+        }
 
-		.btn {
-			padding: 10px 18px;
-			font-size: 1em;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			background: #007bff;
-			color: #fff;
-			transition: background 0.2s;
-		}
+        .btn {
+            padding: 10px 18px;
+            font-size: 1em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: #fff;
+            transition: background 0.2s;
+        }
 
-			.btn:disabled {
-				background: #b0b0b0;
-				cursor: not-allowed;
-			}
+            .btn:disabled {
+                background: #b0b0b0;
+                cursor: not-allowed;
+            }
 
-		.btn-group {
-			display: flex;
-			gap: 8px;
-			justify-content: center;
-			margin-bottom: 10px;
-		}
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
 
-		.result {
-			font-size: 1.1em;
-			margin-top: 20px;
-			font-weight: bold;
-			text-align: center;
-			min-height: 1.5em;
-		}
+        .result {
+            font-size: 1.1em;
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 1.5em;
+        }
 
-		#micStatus {
-			margin-left: 8px;
-			font-size: 1.2em;
-			vertical-align: middle;
-		}
+        #micStatus {
+            margin-left: 8px;
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
 
-		#buzzBtn.buzzed {
-			background: #28a745;
-		}
+        #buzzBtn.buzzed {
+            background: #28a745;
+        }
 
-		#buzzBtn {
-			transition: background 0.2s;
-		}
+        #buzzBtn {
+            transition: background 0.2s;
+        }
 
-		#timerDisplay {
-			font-weight: bold;
-		}
+        #timerDisplay {
+            font-weight: bold;
+        }
 
         /* Responsive styles for tablet */
         @media (max-width: 900px) {
@@ -108,31 +113,39 @@
                 box-shadow: none;
                 padding: 14px 2vw 20px 2vw;
                 width: 100vw;
+                border: none;
             }
+
             h1, h2 {
                 font-size: 1.15em;
             }
+
             .question-count {
                 font-size: 1em;
             }
+
             .answer-row {
                 flex-direction: column;
                 gap: 8px;
             }
+
             .btn-group {
                 flex-direction: column;
                 gap: 8px;
             }
+
             .btn, .answer-input {
                 font-size: 1.08em;
                 padding: 14px 10px;
             }
+
             .answer-input {
                 min-width: 0;
                 width: 100%;
                 min-height: 48px;
                 height: 48px;
             }
+
             #mainTitle {
                 font-size: 1.1em;
                 max-height: 2.8em;
@@ -143,6 +156,7 @@
                 text-overflow: ellipsis;
                 white-space: normal;
             }
+
             #scoreResult p {
                 font-size: 1em;
             }
@@ -153,53 +167,57 @@
             .container {
                 padding: 4px 1vw 10px 1vw;
             }
+
             h1, h2 {
                 font-size: 1em;
             }
+
             .btn, .answer-input {
                 font-size: 1em;
                 padding: 10px 6px;
             }
+
             .question-count {
                 font-size: 0.95em;
             }
+
             .btn-group, .answer-row {
                 gap: 4px;
             }
         }
-	</style>
+    </style>
 </head>
 <body>
-	<div class="container">
-		<h1 id="mainTitle">Welcome to North Georgia Church of God Bible Quiz Practice App</h1>
-		<div id="nameScreen">
-			<input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off">
-			<button class="btn" id="submitName" type="button">Start Quiz</button>
-		</div>
-		<div id="quizScreen" style="display:none;">
-			<div class="question-count" id="questionCount"></div>
-			<div class="btn-group">
-				<button class="btn" id="buzzBtn" style="background:#ff416c;">🚨 Buzz!</button>
-				<span id="timerDisplay" style="font-size:1.1em; color:#d9534f;"></span>
-			</div>
-			<div class="answer-row">
-				<input type="text" class="answer-input" id="answerInput" placeholder="Type or speak your answer..." autocomplete="off" disabled>
-				<button class="btn" id="recordBtn" title="Speak your answer" disabled>🎤</button>
-				<span id="micStatus"></span>
-			</div>
-			<div class="btn-group">
-				<button class="btn" id="submitAnswer" disabled>Submit</button>
-			</div>
-			<div class="result" id="result"></div>
-		</div>
-		<div id="scoreScreen" style="display:none;">
-			<h2>Quiz Complete!</h2>
-			<div id="scoreResult"></div>
-			<button class="btn" id="restartBtn">Start Over</button>
-		</div>
-	</div>
+    <div class="container">
+        <h1 id="mainTitle">Welcome to North Georgia Church of God Bible Quiz Practice App</h1>
+        <div id="nameScreen">
+            <input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off">
+            <button class="btn" id="submitName" type="button">Start Quiz</button>
+        </div>
+        <div id="quizScreen" style="display:none;">
+            <div class="question-count" id="questionCount"></div>
+            <div class="btn-group">
+                <button class="btn" id="buzzBtn" style="background:#ff416c;">🚨 Buzz!</button>
+                <span id="timerDisplay" style="font-size:1.1em; color:#d9534f;"></span>
+            </div>
+            <div class="answer-row">
+                <input type="text" class="answer-input" id="answerInput" placeholder="Type or speak your answer..." autocomplete="off" disabled>
+                <button class="btn" id="recordBtn" title="Speak your answer" disabled>🎤</button>
+                <span id="micStatus"></span>
+            </div>
+            <div class="btn-group">
+                <button class="btn" id="submitAnswer" disabled>Submit</button>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+        <div id="scoreScreen" style="display:none;">
+            <h2>Quiz Complete!</h2>
+            <div id="scoreResult"></div>
+            <button class="btn" id="restartBtn">Start Over</button>
+        </div>
+    </div>
 
-	<script>
+    <script>
 		document.addEventListener('DOMContentLoaded', function () {
 
 			const questions = [
@@ -2931,6 +2949,6 @@
 			};
 
 		});
-	</script>
+    </script>
 </body>
 </html>
