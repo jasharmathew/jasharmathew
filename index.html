@@ -2835,38 +2835,46 @@
 				return arr.slice(0, 20);
 			}
 
-			let userAnswers = [];
-			function showQuestion() {
-				// Progress bar update
-				var progress = ((currentQuestionIndex) / 20) * 100;
-				document.getElementById('progressFill').style.width = progress + '%';
-				document.getElementById('answerError').style.display = 'none';
-				if (timer) resetTimer();
-				if (currentQuestionIndex >= 20) {
-					endQuiz();
-					return;
-				}
-				document.getElementById('answerInput').value = '';
-				document.getElementById('result').textContent = '';
-				document.getElementById('questionCount').textContent = `Question ${currentQuestionIndex + 1} of 20`;
-				document.getElementById('answerInput').disabled = true;
-				document.getElementById('submitAnswer').disabled = true;
-				document.getElementById('recordBtn').disabled = true;
-				document.getElementById('buzzBtn').disabled = false;
-				document.getElementById('buzzBtn').textContent = '🚨 Buzz!';
-				document.getElementById('buzzBtn').style.background = '#ff416c';
-				document.getElementById('timerDisplay').textContent = '';
-				buzzed = false;
-				questionRead = false;
-				speaking = false;
+let userAnswers = [];
+let preBuzzTimer = null;
+let preBuzzSeconds = 10;
+let preBuzzActive = false;
+let preBuzzTimeout = null;
+function showQuestion() {
+    // Progress bar update
+    var progress = ((currentQuestionIndex) / 20) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+    document.getElementById('answerError').style.display = 'none';
+    if (timer) resetTimer();
+    if (preBuzzTimer) clearInterval(preBuzzTimer);
+    if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
+    if (currentQuestionIndex >= 20) {
+        endQuiz();
+        return;
+    }
+    document.getElementById('answerInput').value = '';
+    document.getElementById('result').textContent = '';
+    document.getElementById('questionCount').textContent = `Question ${currentQuestionIndex + 1} of 20`;
+    document.getElementById('answerInput').disabled = true;
+    document.getElementById('submitAnswer').disabled = true;
+    document.getElementById('recordBtn').disabled = true;
+    document.getElementById('buzzBtn').disabled = false;
+    document.getElementById('buzzBtn').textContent = '🚨 Buzz!';
+    document.getElementById('buzzBtn').style.background = '#ff416c';
+    document.getElementById('timerDisplay').textContent = '';
+    buzzed = false;
+    questionRead = false;
+    speaking = false;
 
-				let qIdx = questionOrder[currentQuestionIndex];
-				let points = questions[qIdx].points;
-				let pointsText = `Question for ${points} point${points === 1 ? '' : 's'}.`;
-				speakText(pointsText, function () {
-					speakText(questions[qIdx].question);
-				});
-			}
+    let qIdx = questionOrder[currentQuestionIndex];
+    let points = questions[qIdx].points;
+    let pointsText = `Question for ${points} point${points === 1 ? '' : 's'}.`;
+    speakText(pointsText, function () {
+        speakText(questions[qIdx].question, function () {
+            startPreBuzzTimer();
+        });
+    });
+}
 
 			let timerWarningPlayed = false;
 			function drawCircularTimer(secondsLeft, totalSeconds) {
@@ -2894,27 +2902,75 @@
 				ctx.fillText(secondsLeft > 0 ? secondsLeft : '0', 30, 30);
 			}
 
-			function startTimer() {
-				let seconds = timerSeconds;
-				timerWarningPlayed = false;
-				document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
-				drawCircularTimer(seconds, timerSeconds);
-				timer = setInterval(function () {
-					seconds--;
-					document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
-					drawCircularTimer(seconds, timerSeconds);
-					if (seconds <= 5 && !timerWarningPlayed && seconds > 0) {
-						document.getElementById('timerWarningSound').play();
-						timerWarningPlayed = true;
-					}
-					if (seconds <= 0) {
-						resetTimer();
-						if (buzzed && !document.getElementById('submitAnswer').disabled) {
-							checkAnswer(true);
-						}
-					}
-				}, 1000);
-			}
+function startTimer() {
+    let seconds = timerSeconds;
+    timerWarningPlayed = false;
+    document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+    drawCircularTimer(seconds, timerSeconds);
+    timer = setInterval(function () {
+        seconds--;
+        document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+        drawCircularTimer(seconds, timerSeconds);
+        if (seconds <= 5 && !timerWarningPlayed && seconds > 0) {
+            document.getElementById('timerWarningSound').play();
+            timerWarningPlayed = true;
+        }
+        if (seconds <= 0) {
+            resetTimer();
+            if (buzzed && !document.getElementById('submitAnswer').disabled) {
+                checkAnswer(true);
+            }
+        }
+    }, 1000);
+}
+
+function startPreBuzzTimer() {
+    let seconds = preBuzzSeconds;
+    preBuzzActive = true;
+    document.getElementById('buzzBtn').disabled = false;
+    document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
+    drawCircularTimer(seconds, preBuzzSeconds);
+    if (preBuzzTimer) clearInterval(preBuzzTimer);
+    if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
+    preBuzzTimer = setInterval(function () {
+        seconds--;
+        document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
+        drawCircularTimer(seconds, preBuzzSeconds);
+        if (seconds <= 0) {
+            clearInterval(preBuzzTimer);
+            preBuzzTimer = null;
+        }
+    }, 1000);
+    // If not buzzed in 10 seconds, auto submit as unanswered
+    preBuzzTimeout = setTimeout(function () {
+        preBuzzActive = false;
+        document.getElementById('buzzBtn').disabled = true;
+        document.getElementById('timerDisplay').textContent = 'Time up!';
+        drawCircularTimer(0, preBuzzSeconds);
+        autoSubmitUnanswered();
+    }, preBuzzSeconds * 1000);
+}
+
+function autoSubmitUnanswered() {
+    let qIdx = questionOrder[currentQuestionIndex];
+    userAnswers[currentQuestionIndex] = {
+        question: questions[qIdx].question,
+        userAnswer: '',
+        correctAnswer: questions[qIdx].answer,
+        isCorrect: false
+    };
+    var resultElem = document.getElementById('result');
+    resultElem.style.color = '#d9534f';
+    resultElem.style.background = '#fdeaea';
+    resultElem.textContent = `Unanswered! Correct answer: ${questions[qIdx].answer}`;
+    speakText('The correct answer is ' + questions[qIdx].answer, function () {
+        setTimeout(function () {
+            resultElem.style.background = '';
+            currentQuestionIndex++;
+            showQuestion();
+        }, 400);
+    });
+}
 
 			function resetTimer() {
 				if (timer) {
@@ -2959,31 +3015,38 @@
 					correctAnswer: questions[qIdx].answer,
 					isCorrect: userAnswer === correctAnswer
 				};
-				if (userAnswer === correctAnswer) {
-					totalPoints += points;
-					resultText = `Correct! (+${points} points)`;
-					speakResult = 'Correct!';
-					resultElem.style.color = '#28a745';
-					resultElem.style.background = '#eafbe7';
-				} else {
-					if (questionInterrupted) {
-						totalPoints -= points;
-						resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
-					} else {
-						resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
-					}
-					speakResult = 'Wrong! The correct answer is ' + questions[qIdx].answer;
-					resultElem.style.color = '#d9534f';
-					resultElem.style.background = '#fdeaea';
-				}
-				resultElem.textContent = resultText;
-				setTimeout(function () {
-					resultElem.style.background = '';
-				}, 1200);
-				speakText(speakResult, function () {
-					currentQuestionIndex++;
-					showQuestion();
-				});
+                if (userAnswer === correctAnswer) {
+                    totalPoints += points;
+                    resultText = `Correct! (+${points} points)`;
+                    speakResult = 'Correct!';
+                    resultElem.style.color = '#28a745';
+                    resultElem.style.background = '#eafbe7';
+                    resultElem.textContent = resultText;
+                    setTimeout(function () {
+                        resultElem.style.background = '';
+                    }, 1200);
+                    speakText(speakResult, function () {
+                        currentQuestionIndex++;
+                        showQuestion();
+                    });
+                } else {
+                    if (questionInterrupted) {
+                        totalPoints -= points;
+                        resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
+                    } else {
+                        resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
+                    }
+                    resultElem.style.color = '#d9534f';
+                    resultElem.style.background = '#fdeaea';
+                    resultElem.textContent = resultText;
+                    speakText('The correct answer is ' + questions[qIdx].answer, function () {
+                        setTimeout(function () {
+                            resultElem.style.background = '';
+                            currentQuestionIndex++;
+                            showQuestion();
+                        }, 400);
+                    });
+                }
 			}
 
 			function endQuiz() {
@@ -3070,32 +3133,36 @@
 
 			document.getElementById('submitName').onclick = startQuiz;
 
-			document.getElementById('buzzBtn').onclick = function () {
-				if (!buzzed) {
-					buzzed = true;
-					document.getElementById('buzzBtn').textContent = 'Buzzed!';
-					document.getElementById('buzzBtn').classList.add('buzzed');
-					document.getElementById('answerInput').disabled = false;
-					document.getElementById('submitAnswer').disabled = false;
-					document.getElementById('recordBtn').disabled = false;
-					document.getElementById('answerInput').focus();
-					startTimer();
-					if (!questionRead) {
-						questionInterrupted = true;
-						if (speaking) {
-							if ('speechSynthesis' in window) {
-								window.speechSynthesis.cancel();
-								speakText('Question Interrupted');
-							} else if (typeof typewriterInterval !== 'undefined' && typewriterInterval) {
-								clearInterval(typewriterInterval);
-								typewriterInterval = null;
-							}
-						}
-					} else {
-						questionInterrupted = false;
-					}
-				}
-			};
+document.getElementById('buzzBtn').onclick = function () {
+    if (!buzzed) {
+        buzzed = true;
+        preBuzzActive = false;
+        if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
+        if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
+        document.getElementById('buzzBtn').textContent = 'Buzzed!';
+        document.getElementById('buzzBtn').classList.add('buzzed');
+        document.getElementById('answerInput').disabled = false;
+        document.getElementById('submitAnswer').disabled = false;
+        document.getElementById('recordBtn').disabled = false;
+        document.getElementById('answerInput').focus();
+        startTimer();
+        if (!questionRead) {
+            questionInterrupted = true;
+            if (speaking) {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    speakText('Question interrupted');
+                } else if (typeof typewriterInterval !== 'undefined' && typewriterInterval) {
+                    clearInterval(typewriterInterval);
+                    typewriterInterval = null;
+                    document.getElementById('questionCount').textContent = 'Question interrupted';
+                }
+            }
+        } else {
+            questionInterrupted = false;
+        }
+    }
+};
 
 			document.getElementById('submitAnswer').onclick = function () {
 				if (buzzed) checkAnswer();
@@ -3176,11 +3243,12 @@
 		<li>Type your answer or use the microphone button to speak it.</li>
 		<li>Click <b>Submit</b> to check your answer.</li>
 		<li>Your score will be shown at the end. Click <b>Start Over</b> to try again.</li>
-		<li>Question with the answer will be shown at the end. You can share your results with others.</li>
+		<li>Question with the answer will be shown at the end. You can share your results with others on Facebook, Twitter and WhatsApp.</li>
 		<li><b> More Details can be found at <a href="https://static1.squarespace.com/static/632b0c947bfe6d15bbfcd348/t/69040b06ad6b7a5f35133036/1761872646892/2026+Teen+Talent+Bible+Quizzing+Manual-2.pdf" target="_blank"> Teen Talent</a></b></li>
 	</ul>
 </div>
 </body>
 
 </html>
+
 
