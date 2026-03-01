@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quiz App</title>
+	<title>North Georgia Bible Quiz Preparation App</title>
 	<style>
 		body {
 			font-family: Arial, sans-serif;
@@ -182,33 +182,56 @@
 	</style>
 </head>
 <body>
-	<div class="container">
+  <nav style="width:100%;background:#007bff;color:#fff;padding:10px 0;box-shadow:0 2px 8px rgba(0,0,0,0.07);font-size:1.1em;">
+    <div style="max-width:500px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:nowrap;min-width:0;">
+      <span style="font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:80%;display:inline-block;">Bible Quiz Preparation App</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a href="#instructions" style="color:#fff;text-decoration:underline;white-space:nowrap;">Instructions</a>
+        <button id="navRestart" style="background:#fff;color:#007bff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-weight:bold;white-space:nowrap;">Restart</button>
+      </div>
+    </div>
+  </nav>
+<div class="container" aria-label="Quiz Container">
 		<h1 id="mainTitle">Welcome to North Georgia Church of God Bible Quiz Practice App</h1>
-		<div id="nameScreen">
-			<input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off">
-			<button class="btn" id="submitName" type="button">Start Quiz</button>
-		</div>
-		<div id="quizScreen" style="display:none;">
+<div id="nameScreen">
+  <input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off" aria-label="Name">
+  <select id="timerSelect" style="margin:10px 0 0 0;padding:8px 12px;border-radius:4px;border:1px solid #ccc;">
+    <option value="15">15 seconds</option>
+    <option value="30" selected>30 seconds</option>
+    <option value="45">45 seconds</option>
+    <option value="60">60 seconds</option>
+  </select>
+  <button class="btn" id="submitName" type="button">Start Quiz</button>
+  <div id="nameError" style="color:#d9534f;margin-top:8px;display:none;"></div>
+</div>
+<div id="quizScreen" style="display:none;">
+  <div id="progressBar" style="height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-bottom:16px;">
+    <div id="progressFill" style="height:8px;background:#007bff;width:0%;transition:width 0.3s;"></div>
+  </div>
 			<div class="question-count" id="questionCount"></div>
 			<div class="btn-group">
 				<button class="btn" id="buzzBtn" style="background:#ff416c;">🚨 Buzz!</button>
 				<span id="timerDisplay" style="font-size:1.1em; color:#d9534f;"></span>
 			</div>
-			<div class="answer-row">
-				<input type="text" class="answer-input" id="answerInput" placeholder="Type or speak your answer..." autocomplete="off" disabled>
-				<button class="btn" id="recordBtn" title="Speak your answer" disabled>🎤</button>
-				<span id="micStatus"></span>
-			</div>
+<div class="answer-row">
+  <input type="text" class="answer-input" id="answerInput" placeholder="Type or speak your answer..." autocomplete="off" disabled aria-label="Answer">
+  <button class="btn" id="recordBtn" title="Speak your answer" disabled>🎤</button>
+  <span id="micStatus"></span>
+</div>
+<div id="answerError" style="color:#d9534f;margin-bottom:8px;display:none;"></div>
 			<div class="btn-group">
 				<button class="btn" id="submitAnswer" disabled>Submit</button>
 			</div>
-			<div class="result" id="result"></div>
+<div class="result" id="result" aria-live="polite"></div>
 		</div>
-		<div id="scoreScreen" style="display:none;">
-			<h2>Quiz Complete!</h2>
-			<div id="scoreResult"></div>
-			<button class="btn" id="restartBtn">Start Over</button>
-		</div>
+<div id="scoreScreen" style="display:none;" aria-label="Score Screen">
+  <h2>Quiz Complete!</h2>
+  <div id="scoreResult"></div>
+  <div id="reviewAnswers" style="margin-top:18px;text-align:left;"></div>
+  <button class="btn" id="restartBtn">Start Over</button>
+  <button class="btn" id="shareBtn" style="margin-left:10px;background:#28a745;">Share Score</button>
+  <div id="shareLinks" style="margin-top:12px;display:none;text-align:center;"></div>
+</div>
 	</div>
 
 	<script>
@@ -2762,7 +2785,12 @@
 				return arr.slice(0, 20);
 			}
 
-			function showQuestion() {
+    let userAnswers = [];
+    function showQuestion() {
+      // Progress bar update
+      var progress = ((currentQuestionIndex) / 20) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      document.getElementById('answerError').style.display = 'none';
 				if (timer) resetTimer();
 				if (currentQuestionIndex >= 20) {
 					endQuiz();
@@ -2813,7 +2841,8 @@
 				document.getElementById('timerDisplay').textContent = '';
 			}
 
-			function checkAnswer(autoSubmit = false) {
+    function checkAnswer(autoSubmit = false) {
+      document.getElementById('answerError').style.display = 'none';
 				document.getElementById('answerInput').disabled = true;
 				document.getElementById('submitAnswer').disabled = true;
 				document.getElementById('buzzBtn').disabled = true;
@@ -2830,58 +2859,92 @@
 				let resultText = '';
 				let speakResult = '';
 
-				if (userAnswer === correctAnswer) {
-					totalPoints += points;
-					resultText = `Correct! (+${points} points)`;
-					speakResult = 'Correct!';
-				} else {
-					if (questionInterrupted) {
-						totalPoints -= points;
-						resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
-					} else {
-						resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
-					}
-					speakResult = 'Wrong! The correct answer is ' + questions[qIdx].answer;
-				}
-
-				document.getElementById('result').textContent = resultText;
-				speakText(speakResult, function () {
-					currentQuestionIndex++;
-					showQuestion();
-				});
+        var resultElem = document.getElementById('result');
+        // Validate answer input
+        if (!document.getElementById('answerInput').value.trim()) {
+          document.getElementById('answerError').textContent = 'Please enter your answer.';
+          document.getElementById('answerError').style.display = '';
+          document.getElementById('answerInput').disabled = false;
+          document.getElementById('submitAnswer').disabled = false;
+          return;
+        }
+        // Save user answer for review
+        userAnswers[currentQuestionIndex] = {
+          question: questions[qIdx].question,
+          userAnswer: document.getElementById('answerInput').value,
+          correctAnswer: questions[qIdx].answer,
+          isCorrect: userAnswer === correctAnswer
+        };
+        if (userAnswer === correctAnswer) {
+            totalPoints += points;
+            resultText = `Correct! (+${points} points)`;
+            speakResult = 'Correct!';
+            resultElem.style.color = '#28a745';
+            resultElem.style.background = '#eafbe7';
+        } else {
+            if (questionInterrupted) {
+                totalPoints -= points;
+                resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
+            } else {
+                resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
+            }
+            speakResult = 'Wrong! The correct answer is ' + questions[qIdx].answer;
+            resultElem.style.color = '#d9534f';
+            resultElem.style.background = '#fdeaea';
+        }
+        resultElem.textContent = resultText;
+        setTimeout(function(){
+          resultElem.style.background = '';
+        }, 1200);
+        speakText(speakResult, function () {
+            currentQuestionIndex++;
+            showQuestion();
+        });
 			}
 
-			function endQuiz() {
-				document.getElementById('quizScreen').style.display = 'none';
-				document.getElementById('scoreScreen').style.display = '';
-				document.getElementById('scoreResult').innerHTML = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
-			}
+    function endQuiz() {
+      document.getElementById('quizScreen').style.display = 'none';
+      document.getElementById('scoreScreen').style.display = '';
+      document.getElementById('scoreResult').innerHTML = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
+      // Review answers table
+      let reviewHtml = '<h3>Review Answers</h3><table style="width:100%;border-collapse:collapse;font-size:0.98em;">';
+      reviewHtml += '<tr style="background:#f4f4f4;"><th style="padding:6px;border:1px solid #ddd;">#</th><th style="padding:6px;border:1px solid #ddd;">Question</th><th style="padding:6px;border:1px solid #ddd;">Your Answer</th><th style="padding:6px;border:1px solid #ddd;">Correct Answer</th><th style="padding:6px;border:1px solid #ddd;">Result</th></tr>';
+      for (let i = 0; i < userAnswers.length; i++) {
+        if (!userAnswers[i]) continue;
+        reviewHtml += `<tr><td style='border:1px solid #ddd;padding:6px;'>${i+1}</td><td style='border:1px solid #ddd;padding:6px;'>${userAnswers[i].question}</td><td style='border:1px solid #ddd;padding:6px;'>${userAnswers[i].userAnswer}</td><td style='border:1px solid #ddd;padding:6px;'>${userAnswers[i].correctAnswer}</td><td style='border:1px solid #ddd;padding:6px;color:${userAnswers[i].isCorrect?'#28a745':'#d9534f'};'>${userAnswers[i].isCorrect?'✔':'✖'}</td></tr>`;
+      }
+      reviewHtml += '</table>';
+      document.getElementById('reviewAnswers').innerHTML = reviewHtml;
+    }
 
 			// FIXED: The user click now explicitly triggers a dummy speech event to "unlock" the audio engine
-			function startQuiz() {
-				const nameVal = document.getElementById('nameInput').value.trim();
-				if (nameVal.length === 0) {
-					alert('Please enter your name to start the quiz.');
-					return;
-				}
-
-				// Unlock Speech Synthesis
-				if ('speechSynthesis' in window) {
-					window.speechSynthesis.cancel();
-					const unlock = new SpeechSynthesisUtterance("");
-					window.speechSynthesis.speak(unlock);
-				}
-
-				userName = nameVal;
-				document.getElementById('nameScreen').style.display = 'none';
-				document.getElementById('quizScreen').style.display = '';
-				document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal;
-				currentQuestionIndex = 0;
-				totalPoints = 0;
-				questionOrder = shuffleQuestions();
-
-				setTimeout(showQuestion, 100);
-			}
+    function startQuiz() {
+      const nameVal = document.getElementById('nameInput').value.trim();
+      document.getElementById('nameError').style.display = 'none';
+      // Validate name: must be non-empty and only letters/numbers/spaces
+      if (nameVal.length === 0 || !/^[a-zA-Z0-9 ]+$/.test(nameVal)) {
+        document.getElementById('nameError').textContent = 'Please enter a valid name (letters and numbers only).';
+        document.getElementById('nameError').style.display = '';
+        return;
+      }
+      // Timer customization
+      timerSeconds = parseInt(document.getElementById('timerSelect').value, 10);
+      // Unlock Speech Synthesis
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const unlock = new SpeechSynthesisUtterance("");
+        window.speechSynthesis.speak(unlock);
+      }
+      userName = nameVal;
+      document.getElementById('nameScreen').style.display = 'none';
+      document.getElementById('quizScreen').style.display = '';
+      document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal;
+      currentQuestionIndex = 0;
+      totalPoints = 0;
+      questionOrder = shuffleQuestions();
+      userAnswers = [];
+      setTimeout(showQuestion, 100);
+    }
 
 			document.getElementById('submitName').onclick = startQuiz;
 
@@ -2916,34 +2979,71 @@
 				if (buzzed) checkAnswer();
 			};
 
-			let recognizing = false;
-			let recognition;
-			if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-				const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-				recognition = new SpeechRecognition();
-				recognition.lang = 'en-US';
-				recognition.onstart = function () {
-					recognizing = true;
-					document.getElementById('micStatus').textContent = '🎙️ Listening...';
-				};
-				recognition.onend = function () {
-					recognizing = false;
-					document.getElementById('micStatus').textContent = '';
-				};
-				recognition.onresult = function (event) {
-					document.getElementById('answerInput').value = event.results[0][0].transcript;
-				};
-				document.getElementById('recordBtn').onclick = function () {
-					if (recognizing) recognition.stop(); else recognition.start();
-				};
-			}
+      let recognizing = false;
+      let recognition;
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.onstart = function () {
+          recognizing = true;
+          document.getElementById('micStatus').textContent = '🎙️ Listening...';
+        };
+        recognition.onend = function () {
+          recognizing = false;
+          document.getElementById('micStatus').textContent = '';
+        };
+        recognition.onerror = function (event) {
+          document.getElementById('answerError').textContent = 'Speech recognition error: ' + (event.error || 'Unknown error');
+          document.getElementById('answerError').style.display = '';
+        };
+        recognition.onresult = function (event) {
+          document.getElementById('answerInput').value = event.results[0][0].transcript;
+        };
+        document.getElementById('recordBtn').onclick = function () {
+          try {
+            if (recognizing) recognition.stop(); else recognition.start();
+          } catch (err) {
+            document.getElementById('answerError').textContent = 'Speech recognition could not start.';
+            document.getElementById('answerError').style.display = '';
+          }
+        };
+      }
 
-			document.getElementById('restartBtn').onclick = function () {
-				location.reload(); // Simplest way to reset all states
-			};
+    document.getElementById('restartBtn').onclick = function () {
+        location.reload(); // Simplest way to reset all states
+    };
+    document.getElementById('navRestart').onclick = function () {
+        location.reload();
+    };
+
+    document.getElementById('shareBtn').onclick = function () {
+      var score = totalPoints;
+      var name = userName || 'I';
+      var url = window.location.href.split('#')[0];
+      var text = `${name} scored ${score} points on the Bible Quiz! Try it yourself:`;
+      if (navigator.share) {
+        navigator.share({
+          title: 'Bible Quiz Score',
+          text: text,
+          url: url
+        });
+      } else {
+        var fb = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+        var tw = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + ' ' + url)}`;
+        var wa = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+        document.getElementById('shareLinks').innerHTML =
+          `<a href='${fb}' target='_blank' style='margin:0 8px;'>Share on Facebook</a>` +
+          `<a href='${tw}' target='_blank' style='margin:0 8px;'>Share on Twitter</a>` +
+          `<a href='${wa}' target='_blank' style='margin:0 8px;'>Share on WhatsApp</a>`;
+        document.getElementById('shareLinks').style.display = '';
+      }
+    };
 
 		});
 	</script>
+<!-- Accessibility anchor for instructions -->
+<a id="instructions"></a>
 </body>
 <div style="max-width:500px;margin:30px auto 10px auto;padding:18px 20px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);font-size:1em;">
   <b>Instructions</b><br><br>
