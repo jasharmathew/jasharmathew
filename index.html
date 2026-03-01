@@ -244,6 +244,12 @@
 				<option value="20" selected>20 seconds</option>
 				<option value="45">45 seconds</option>
 				<option value="60">60 seconds</option>
+</select>
+<select id="modeSelect" style="margin:10px 0 0 0;padding:8px 12px;border-radius:4px;border:1px solid #ccc;">
+  <option value="human">Single Player</option>
+  <option value="machine">You vs Another Person (Turn-Based)</option>
+  <option value="humancomputer">Human vs Computer</option>
+</select>
 			</select>
 			<button class="btn" id="submitName" type="button">Start Quiz</button>
 			<div id="nameError" style="color:#d9534f;margin-top:8px;display:none;"></div>
@@ -2783,6 +2789,10 @@
 			let timer = null;
 			let timerSeconds = 30;
 			let questionOrder = [];
+let humanVsComputerMode = false;
+let computerScore = 0;
+let computerBuzzTimeout = null;
+let buzzedBy = null; // 'human' or 'computer'
 
 			function speakText(text, onend) {
 				if ('speechSynthesis' in window) {
@@ -2835,46 +2845,56 @@
 				return arr.slice(0, 20);
 			}
 
-let userAnswers = [];
-let preBuzzTimer = null;
-let preBuzzSeconds = 10;
-let preBuzzActive = false;
-let preBuzzTimeout = null;
-function showQuestion() {
-    // Progress bar update
-    var progress = ((currentQuestionIndex) / 20) * 100;
-    document.getElementById('progressFill').style.width = progress + '%';
-    document.getElementById('answerError').style.display = 'none';
-    if (timer) resetTimer();
-    if (preBuzzTimer) clearInterval(preBuzzTimer);
-    if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
-    if (currentQuestionIndex >= 20) {
-        endQuiz();
-        return;
-    }
-    document.getElementById('answerInput').value = '';
-    document.getElementById('result').textContent = '';
-    document.getElementById('questionCount').textContent = `Question ${currentQuestionIndex + 1} of 20`;
-    document.getElementById('answerInput').disabled = true;
-    document.getElementById('submitAnswer').disabled = true;
-    document.getElementById('recordBtn').disabled = true;
-    document.getElementById('buzzBtn').disabled = false;
-    document.getElementById('buzzBtn').textContent = '🚨 Buzz!';
-    document.getElementById('buzzBtn').style.background = '#ff416c';
-    document.getElementById('timerDisplay').textContent = '';
-    buzzed = false;
-    questionRead = false;
-    speaking = false;
+			let userAnswers = [];
+			let preBuzzTimer = null;
+			let preBuzzSeconds = 10;
+			let preBuzzActive = false;
+			let preBuzzTimeout = null;
+			function showQuestion() {
+				// Progress bar update
+				var progress = ((currentQuestionIndex) / 20) * 100;
+				document.getElementById('progressFill').style.width = progress + '%';
+				document.getElementById('answerError').style.display = 'none';
+				if (timer) resetTimer();
+				if (preBuzzTimer) clearInterval(preBuzzTimer);
+				if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
+				if (currentQuestionIndex >= 20) {
+					endQuiz();
+					return;
+				}
+				document.getElementById('answerInput').value = '';
+				document.getElementById('result').textContent = '';
+				document.getElementById('questionCount').textContent = `Question ${currentQuestionIndex + 1} of 20`;
+				document.getElementById('answerInput').disabled = true;
+				document.getElementById('submitAnswer').disabled = true;
+				document.getElementById('recordBtn').disabled = true;
+				document.getElementById('buzzBtn').disabled = false;
+				document.getElementById('buzzBtn').textContent = '🚨 Buzz!';
+				document.getElementById('buzzBtn').style.background = '#ff416c';
+				document.getElementById('timerDisplay').textContent = '';
+				buzzed = false;
+    buzzedBy = null;
+				questionRead = false;
+				speaking = false;
 
-    let qIdx = questionOrder[currentQuestionIndex];
-    let points = questions[qIdx].points;
-    let pointsText = `Question for ${points} point${points === 1 ? '' : 's'}.`;
-    speakText(pointsText, function () {
-        speakText(questions[qIdx].question, function () {
-            startPreBuzzTimer();
-        });
-    });
-}
+				let qIdx = questionOrder[currentQuestionIndex];
+				let points = questions[qIdx].points;
+				let pointsText = `Question for ${points} point${points === 1 ? '' : 's'}.`;
+				speakText(pointsText, function () {
+					speakText(questions[qIdx].question, function () {
+						startPreBuzzTimer();
+            // If Human vs Computer mode, set random computer buzz
+            if (humanVsComputerMode) {
+                let randomBuzzMs = Math.floor(Math.random() * (preBuzzSeconds * 1000 - 1200)) + 600;
+                computerBuzzTimeout = setTimeout(function () {
+                    if (!buzzed) {
+                        computerBuzzed();
+                    }
+                }, randomBuzzMs);
+            }
+					});
+				});
+			}
 
 			let timerWarningPlayed = false;
 			function drawCircularTimer(secondsLeft, totalSeconds) {
@@ -2902,75 +2922,75 @@ function showQuestion() {
 				ctx.fillText(secondsLeft > 0 ? secondsLeft : '0', 30, 30);
 			}
 
-function startTimer() {
-    let seconds = timerSeconds;
-    timerWarningPlayed = false;
-    document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
-    drawCircularTimer(seconds, timerSeconds);
-    timer = setInterval(function () {
-        seconds--;
-        document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
-        drawCircularTimer(seconds, timerSeconds);
-        if (seconds <= 5 && !timerWarningPlayed && seconds > 0) {
-            document.getElementById('timerWarningSound').play();
-            timerWarningPlayed = true;
-        }
-        if (seconds <= 0) {
-            resetTimer();
-            if (buzzed && !document.getElementById('submitAnswer').disabled) {
-                checkAnswer(true);
-            }
-        }
-    }, 1000);
-}
+			function startTimer() {
+				let seconds = timerSeconds;
+				timerWarningPlayed = false;
+				document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+				drawCircularTimer(seconds, timerSeconds);
+				timer = setInterval(function () {
+					seconds--;
+					document.getElementById('timerDisplay').textContent = `⏳ ${seconds}s`;
+					drawCircularTimer(seconds, timerSeconds);
+					if (seconds <= 5 && !timerWarningPlayed && seconds > 0) {
+						document.getElementById('timerWarningSound').play();
+						timerWarningPlayed = true;
+					}
+					if (seconds <= 0) {
+						resetTimer();
+						if (buzzed && !document.getElementById('submitAnswer').disabled) {
+							checkAnswer(true);
+						}
+					}
+				}, 1000);
+			}
 
-function startPreBuzzTimer() {
-    let seconds = preBuzzSeconds;
-    preBuzzActive = true;
-    document.getElementById('buzzBtn').disabled = false;
-    document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
-    drawCircularTimer(seconds, preBuzzSeconds);
-    if (preBuzzTimer) clearInterval(preBuzzTimer);
-    if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
-    preBuzzTimer = setInterval(function () {
-        seconds--;
-        document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
-        drawCircularTimer(seconds, preBuzzSeconds);
-        if (seconds <= 0) {
-            clearInterval(preBuzzTimer);
-            preBuzzTimer = null;
-        }
-    }, 1000);
-    // If not buzzed in 10 seconds, auto submit as unanswered
-    preBuzzTimeout = setTimeout(function () {
-        preBuzzActive = false;
-        document.getElementById('buzzBtn').disabled = true;
-        document.getElementById('timerDisplay').textContent = 'Time up!';
-        drawCircularTimer(0, preBuzzSeconds);
-        autoSubmitUnanswered();
-    }, preBuzzSeconds * 1000);
-}
+			function startPreBuzzTimer() {
+				let seconds = preBuzzSeconds;
+				preBuzzActive = true;
+				document.getElementById('buzzBtn').disabled = false;
+				document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
+				drawCircularTimer(seconds, preBuzzSeconds);
+				if (preBuzzTimer) clearInterval(preBuzzTimer);
+				if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
+				preBuzzTimer = setInterval(function () {
+					seconds--;
+					document.getElementById('timerDisplay').textContent = `⏳ ${seconds}/${preBuzzSeconds}s (Buzz or wait...)`;
+					drawCircularTimer(seconds, preBuzzSeconds);
+					if (seconds <= 0) {
+						clearInterval(preBuzzTimer);
+						preBuzzTimer = null;
+					}
+				}, 1000);
+				// If not buzzed in 10 seconds, auto submit as unanswered
+				preBuzzTimeout = setTimeout(function () {
+					preBuzzActive = false;
+					document.getElementById('buzzBtn').disabled = true;
+					document.getElementById('timerDisplay').textContent = 'Time up!';
+					drawCircularTimer(0, preBuzzSeconds);
+					autoSubmitUnanswered();
+				}, preBuzzSeconds * 1000);
+			}
 
-function autoSubmitUnanswered() {
-    let qIdx = questionOrder[currentQuestionIndex];
-    userAnswers[currentQuestionIndex] = {
-        question: questions[qIdx].question,
-        userAnswer: '',
-        correctAnswer: questions[qIdx].answer,
-        isCorrect: false
-    };
-    var resultElem = document.getElementById('result');
-    resultElem.style.color = '#d9534f';
-    resultElem.style.background = '#fdeaea';
-    resultElem.textContent = `Unanswered! Correct answer: ${questions[qIdx].answer}`;
-    speakText('The correct answer is ' + questions[qIdx].answer, function () {
-        setTimeout(function () {
-            resultElem.style.background = '';
-            currentQuestionIndex++;
-            showQuestion();
-        }, 400);
-    });
-}
+			function autoSubmitUnanswered() {
+				let qIdx = questionOrder[currentQuestionIndex];
+				userAnswers[currentQuestionIndex] = {
+					question: questions[qIdx].question,
+					userAnswer: '',
+					correctAnswer: questions[qIdx].answer,
+					isCorrect: false
+				};
+				var resultElem = document.getElementById('result');
+				resultElem.style.color = '#d9534f';
+				resultElem.style.background = '#fdeaea';
+				resultElem.textContent = `Unanswered! Correct answer: ${questions[qIdx].answer}`;
+				speakText('The correct answer is ' + questions[qIdx].answer, function () {
+					setTimeout(function () {
+						resultElem.style.background = '';
+						currentQuestionIndex++;
+						showQuestion();
+					}, 400);
+				});
+			}
 
 			function resetTimer() {
 				if (timer) {
@@ -3008,51 +3028,76 @@ function autoSubmitUnanswered() {
 				//	document.getElementById('submitAnswer').disabled = false;
 				//	return;
 				//}
-				// Save user answer for review
-				userAnswers[currentQuestionIndex] = {
-					question: questions[qIdx].question,
-					userAnswer: document.getElementById('answerInput').value,
-					correctAnswer: questions[qIdx].answer,
-					isCorrect: userAnswer === correctAnswer
-				};
-                if (userAnswer === correctAnswer) {
-                    totalPoints += points;
-                    resultText = `Correct! (+${points} points)`;
-                    speakResult = 'Correct!';
-                    resultElem.style.color = '#28a745';
-                    resultElem.style.background = '#eafbe7';
-                    resultElem.textContent = resultText;
-                    setTimeout(function () {
-                        resultElem.style.background = '';
-                    }, 1200);
-                    speakText(speakResult, function () {
-                        currentQuestionIndex++;
-                        showQuestion();
-                    });
-                } else {
-                    if (questionInterrupted) {
-                        totalPoints -= points;
-                        resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
-                    } else {
-                        resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
-                    }
-                    resultElem.style.color = '#d9534f';
-                    resultElem.style.background = '#fdeaea';
-                    resultElem.textContent = resultText;
-                    speakText('The correct answer is ' + questions[qIdx].answer, function () {
-                        setTimeout(function () {
-                            resultElem.style.background = '';
-                            currentQuestionIndex++;
-                            showQuestion();
-                        }, 400);
-                    });
-                }
+    // Save user answer for review
+    userAnswers[currentQuestionIndex] = {
+        question: questions[qIdx].question,
+        userAnswer: document.getElementById('answerInput').value,
+        correctAnswer: questions[qIdx].answer,
+        isCorrect: userAnswer === correctAnswer
+    };
+    if (humanVsComputerMode && buzzedBy === 'computer') {
+        // Computer answers (simulate always correct)
+        computerScore += points;
+        resultElem.textContent = `Computer answered correctly! (+${points} points)`;
+        resultElem.style.color = '#007bff';
+        resultElem.style.background = '#e0e7ff';
+        setTimeout(function () {
+            resultElem.style.background = '';
+            currentQuestionIndex++;
+            showQuestion();
+        }, 900);
+        return;
+    }
+    // Human answers
+    if (userAnswer === correctAnswer) {
+        totalPoints += points;
+        resultText = `Correct! (+${points} points)`;
+        speakResult = 'Correct!';
+        resultElem.style.color = '#28a745';
+        resultElem.style.background = '#eafbe7';
+        resultElem.textContent = resultText;
+        setTimeout(function () {
+            resultElem.style.background = '';
+        }, 1200);
+        speakText(speakResult, function () {
+            currentQuestionIndex++;
+            showQuestion();
+        });
+    } else {
+        if (questionInterrupted) {
+            totalPoints -= points;
+            resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
+        } else {
+            resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
+        }
+        resultElem.style.color = '#d9534f';
+        resultElem.style.background = '#fdeaea';
+        resultElem.textContent = resultText;
+        speakText('The correct answer is ' + questions[qIdx].answer, function () {
+            setTimeout(function () {
+                resultElem.style.background = '';
+                currentQuestionIndex++;
+                showQuestion();
+            }, 400);
+        });
+    }
 			}
 
 			function endQuiz() {
-				document.getElementById('quizScreen').style.display = 'none';
-				document.getElementById('scoreScreen').style.display = '';
-				document.getElementById('scoreResult').innerHTML = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
+    document.getElementById('quizScreen').style.display = 'none';
+    document.getElementById('scoreScreen').style.display = '';
+    let scoreHtml = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
+    if (humanVsComputerMode) {
+        scoreHtml += `<p>Computer's total score: <b>${computerScore}</b> points.</p>`;
+        if (totalPoints > computerScore) {
+            scoreHtml += `<p style='color:#28a745;font-weight:bold;'>You win!</p>`;
+        } else if (totalPoints < computerScore) {
+            scoreHtml += `<p style='color:#007bff;font-weight:bold;'>Computer wins!</p>`;
+        } else {
+            scoreHtml += `<p style='color:#888;font-weight:bold;'>It's a tie!</p>`;
+        }
+    }
+    document.getElementById('scoreResult').innerHTML = scoreHtml;
 				// Review answers table
 				let reviewHtml = '<h3>Review Answers</h3><table style="width:100%;border-collapse:collapse;font-size:0.98em;">';
 				reviewHtml += '<tr style="background:#f4f4f4;"><th style="padding:6px;border:1px solid #ddd;">#</th><th style="padding:6px;border:1px solid #ddd;">Question</th><th style="padding:6px;border:1px solid #ddd;">Your Answer</th><th style="padding:6px;border:1px solid #ddd;">Correct Answer</th><th style="padding:6px;border:1px solid #ddd;">Result</th></tr>';
@@ -3118,27 +3163,32 @@ function autoSubmitUnanswered() {
 					const unlock = new SpeechSynthesisUtterance("");
 					window.speechSynthesis.speak(unlock);
 				}
-				userName = nameVal;
-				document.getElementById('nameScreen').style.display = 'none';
-				document.getElementById('quizScreen').style.display = '';
-				document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal;
-				currentQuestionIndex = 0;
-				totalPoints = 0;
-				questionOrder = shuffleQuestions();
-				userAnswers = [];
-				setMuteState(false);
-				playBgMusic();
-				setTimeout(showQuestion, 100);
+    let modeVal = document.getElementById('modeSelect') ? document.getElementById('modeSelect').value : 'human';
+    humanVsComputerMode = modeVal === 'humancomputer';
+    computerScore = 0;
+    userName = nameVal;
+    document.getElementById('nameScreen').style.display = 'none';
+    document.getElementById('quizScreen').style.display = '';
+    document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal + (humanVsComputerMode ? ' vs Computer' : '');
+    currentQuestionIndex = 0;
+    totalPoints = 0;
+    questionOrder = shuffleQuestions();
+    userAnswers = [];
+    setMuteState(false);
+    playBgMusic();
+    setTimeout(showQuestion, 100);
 			}
 
 			document.getElementById('submitName').onclick = startQuiz;
 
-document.getElementById('buzzBtn').onclick = function () {
+			document.getElementById('buzzBtn').onclick = function () {
     if (!buzzed) {
         buzzed = true;
+        buzzedBy = 'human';
         preBuzzActive = false;
         if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
         if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
+        if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
         document.getElementById('buzzBtn').textContent = 'Buzzed!';
         document.getElementById('buzzBtn').classList.add('buzzed');
         document.getElementById('answerInput').disabled = false;
@@ -3162,7 +3212,7 @@ document.getElementById('buzzBtn').onclick = function () {
             questionInterrupted = false;
         }
     }
-};
+			};
 
 			document.getElementById('submitAnswer').onclick = function () {
 				if (buzzed) checkAnswer();
@@ -3229,6 +3279,43 @@ document.getElementById('buzzBtn').onclick = function () {
 				}
 			};
 
+    // --- Human vs Computer functions ---
+    function computerBuzzed() {
+        buzzed = true;
+        buzzedBy = 'computer';
+        preBuzzActive = false;
+        if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
+        if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
+        if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
+        document.getElementById('buzzBtn').disabled = true;
+        document.getElementById('buzzBtn').textContent = 'Computer Buzzed!';
+        document.getElementById('buzzBtn').style.background = '#007bff';
+        document.getElementById('result').textContent = 'Computer buzzed first and is answering...';
+        speakText('Question interrupted', function () {
+            let qIdx = questionOrder[currentQuestionIndex];
+            speakText('The correct answer is ' + questions[qIdx].answer, function () {
+                setTimeout(function () {
+                    computerAnswersQuestion();
+                }, 700);
+            });
+        });
+    }
+
+    function computerAnswersQuestion() {
+        let qIdx = questionOrder[currentQuestionIndex];
+        let points = questions[qIdx].points;
+        computerScore += points;
+        var resultElem = document.getElementById('result');
+        resultElem.textContent = `Computer answered correctly! (+${points} points)`;
+        resultElem.style.color = '#007bff';
+        resultElem.style.background = '#e0e7ff';
+        setTimeout(function () {
+            resultElem.style.background = '';
+            currentQuestionIndex++;
+            showQuestion();
+        }, 900);
+    }
+
 		});
 	</script>
 	<!-- Accessibility anchor for instructions -->
@@ -3239,6 +3326,7 @@ document.getElementById('buzzBtn').onclick = function () {
 	<ul style="padding-left:18px;">
 		<li>Enter your name and click <b>Start Quiz</b> to begin.</li>
 		<li>Customize the timer according to your preference(default is 20 seconds).</li>
+		<li>Select either Single Player(yourself), you with another partner or You vs Computer</li>
 		<li>Listen the question. When ready, click <b>Buzz!</b> to answer.</li>
 		<li>Type your answer or use the microphone button to speak it.</li>
 		<li>Click <b>Submit</b> to check your answer.</li>
@@ -3250,5 +3338,6 @@ document.getElementById('buzzBtn').onclick = function () {
 </body>
 
 </html>
+
 
 
