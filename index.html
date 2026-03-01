@@ -3291,7 +3291,7 @@ let buzzedBy = null; // 'human' or 'computer'
         document.getElementById('buzzBtn').textContent = 'Computer Buzzed!';
         document.getElementById('buzzBtn').style.background = '#007bff';
         document.getElementById('result').textContent = 'Computer buzzed first and is answering...';
-        speakText('Question interrupted', function () {
+        speakText('Question buzzed by Computer', function () {
             let qIdx = questionOrder[currentQuestionIndex];
             speakText('The correct answer is ' + questions[qIdx].answer, function () {
                 setTimeout(function () {
