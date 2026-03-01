@@ -4,7 +4,33 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>North Georgia Bible Quiz Preparation App</title>
-	<style>
+  <style>
+    body {
+      /* Gradient background for modern look */
+      background: linear-gradient(135deg, #e0e7ff 0%, #fff 100%);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.7s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn:active {
+      animation: btnPress 0.2s;
+    }
+    @keyframes btnPress {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.96); }
+      100% { transform: scale(1); }
+    }
+
+    .result {
+      transition: background 0.5s, color 0.5s;
+      animation: fadeIn 0.7s;
+    }
 		body {
 			font-family: Arial, sans-serif;
 			background-color: #f4f4f4;
@@ -191,9 +217,9 @@
       </div>
     </div>
   </nav>
-<div class="container" aria-label="Quiz Container">
+  <div class="container fade-in" aria-label="Quiz Container">
 		<h1 id="mainTitle">Welcome to North Georgia Church of God Bible Quiz Practice App</h1>
-<div id="nameScreen">
+<div id="nameScreen" class="fade-in">
   <input type="text" id="nameInput" class="answer-input" placeholder="Enter your name..." autocomplete="off" aria-label="Name">
   <select id="timerSelect" style="margin:10px 0 0 0;padding:8px 12px;border-radius:4px;border:1px solid #ccc;">
     <option value="15">15 seconds</option>
@@ -204,7 +230,7 @@
   <button class="btn" id="submitName" type="button">Start Quiz</button>
   <div id="nameError" style="color:#d9534f;margin-top:8px;display:none;"></div>
 </div>
-<div id="quizScreen" style="display:none;">
+<div id="quizScreen" style="display:none;" class="fade-in">
   <div id="progressBar" style="height:8px;background:#eee;border-radius:4px;overflow:hidden;margin-bottom:16px;">
     <div id="progressFill" style="height:8px;background:#007bff;width:0%;transition:width 0.3s;"></div>
   </div>
@@ -224,7 +250,7 @@
 			</div>
 <div class="result" id="result" aria-live="polite"></div>
 		</div>
-<div id="scoreScreen" style="display:none;" aria-label="Score Screen">
+<div id="scoreScreen" style="display:none;" aria-label="Score Screen" class="fade-in">
   <h2>Quiz Complete!</h2>
   <div id="scoreResult"></div>
   <div id="reviewAnswers" style="margin-top:18px;text-align:left;"></div>
@@ -3045,7 +3071,7 @@
 <!-- Accessibility anchor for instructions -->
 <a id="instructions"></a>
 </body>
-<div style="max-width:500px;margin:30px auto 10px auto;padding:18px 20px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);font-size:1em;">
+<div style="max-width:500px;margin:30px auto 10px auto;padding:18px 20px;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);font-size:1em;" class="fade-in">
   <b>Instructions</b><br><br>
   <ul style="padding-left:18px;">
     <li>Enter your name and click <b>Start Quiz</b> to begin.</li>
