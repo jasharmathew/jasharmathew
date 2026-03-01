@@ -2945,13 +2945,13 @@
 
 				var resultElem = document.getElementById('result');
 				// Validate answer input
-				if (!document.getElementById('answerInput').value.trim()) {
-					document.getElementById('answerError').textContent = 'Please enter your answer.';
-					document.getElementById('answerError').style.display = '';
-					document.getElementById('answerInput').disabled = false;
-					document.getElementById('submitAnswer').disabled = false;
-					return;
-				}
+				//if (!document.getElementById('answerInput').value.trim()) {
+				//	document.getElementById('answerError').textContent = 'Please enter your answer.';
+				//	document.getElementById('answerError').style.display = '';
+				//	document.getElementById('answerInput').disabled = false;
+				//	document.getElementById('submitAnswer').disabled = false;
+				//	return;
+				//}
 				// Save user answer for review
 				userAnswers[currentQuestionIndex] = {
 					question: questions[qIdx].question,
