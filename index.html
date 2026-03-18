@@ -244,11 +244,11 @@
 				<option value="20" selected>20 seconds</option>
 				<option value="45">45 seconds</option>
 				<option value="60">60 seconds</option>
-</select>
-<select id="modeSelect" style="margin:10px 0 0 0;padding:8px 12px;border-radius:4px;border:1px solid #ccc;">
-  <option value="human">Single Player</option>
-  <option value="humancomputer">Human vs Computer</option>
-</select>
+			</select>
+			<select id="modeSelect" style="margin:10px 0 0 0;padding:8px 12px;border-radius:4px;border:1px solid #ccc;">
+				<option value="human">Single Player</option>
+				<option value="humancomputer">Human vs Computer</option>
+			</select>
 			</select>
 			<button class="btn" id="submitName" type="button">Start Quiz</button>
 			<div id="nameError" style="color:#d9534f;margin-top:8px;display:none;"></div>
@@ -2788,10 +2788,10 @@
 			let timer = null;
 			let timerSeconds = 30;
 			let questionOrder = [];
-let humanVsComputerMode = false;
-let computerScore = 0;
-let computerBuzzTimeout = null;
-let buzzedBy = null; // 'human' or 'computer'
+			let humanVsComputerMode = false;
+			let computerScore = 0;
+			let computerBuzzTimeout = null;
+			let buzzedBy = null; // 'human' or 'computer'
 
 			function speakText(text, onend) {
 				if ('speechSynthesis' in window) {
@@ -2872,27 +2872,41 @@ let buzzedBy = null; // 'human' or 'computer'
 				document.getElementById('buzzBtn').style.background = '#ff416c';
 				document.getElementById('timerDisplay').textContent = '';
 				buzzed = false;
-    buzzedBy = null;
+				buzzedBy = null;
 				questionRead = false;
 				speaking = false;
 
 				let qIdx = questionOrder[currentQuestionIndex];
 				let points = questions[qIdx].points;
 				let pointsText = `Question for ${points} point${points === 1 ? '' : 's'}.`;
-				speakText(pointsText, function () {
-					speakText(questions[qIdx].question, function () {
-						startPreBuzzTimer();
-            // If Human vs Computer mode, set random computer buzz
-            if (humanVsComputerMode) {
-                let randomBuzzMs = Math.floor(Math.random() * (preBuzzSeconds * 1000 - 1200)) + 600;
-                computerBuzzTimeout = setTimeout(function () {
-                    if (!buzzed) {
-                        computerBuzzed();
+                speakText(pointsText, function () {
+                    // Estimate question reading duration (speech or typewriter)
+                    let questionText = questions[qIdx].question;
+                    let estimatedDurationMs = 0;
+                    if ('speechSynthesis' in window) {
+                        // Estimate 70ms per character, min 1.5s, max 6s
+                        estimatedDurationMs = Math.max(1500, Math.min(6000, questionText.length * 70));
+                    } else {
+                        // Typewriter: 40ms per char
+                        estimatedDurationMs = Math.max(1500, Math.min(6000, questionText.length * 40));
                     }
-                }, randomBuzzMs);
-            }
-					});
-				});
+                    // If Human vs Computer mode, computer will buzz before question is finished
+                    let computerBuzzMs = 0;
+                    if (humanVsComputerMode) {
+                        // Random time between 30% and 80% of question reading duration
+                        let minMs = Math.floor(estimatedDurationMs * 0.3);
+                        let maxMs = Math.floor(estimatedDurationMs * 0.8);
+                        computerBuzzMs = Math.floor(Math.random() * (maxMs - minMs)) + minMs;
+                        computerBuzzTimeout = setTimeout(function () {
+                            if (!buzzed) {
+                                computerBuzzed();
+                            }
+                        }, computerBuzzMs);
+                    }
+                    speakText(questionText, function () {
+                        startPreBuzzTimer();
+                    });
+                });
 			}
 
 			let timerWarningPlayed = false;
@@ -3027,76 +3041,76 @@ let buzzedBy = null; // 'human' or 'computer'
 				//	document.getElementById('submitAnswer').disabled = false;
 				//	return;
 				//}
-    // Save user answer for review
-    userAnswers[currentQuestionIndex] = {
-        question: questions[qIdx].question,
-        userAnswer: document.getElementById('answerInput').value,
-        correctAnswer: questions[qIdx].answer,
-        isCorrect: userAnswer === correctAnswer
-    };
-    if (humanVsComputerMode && buzzedBy === 'computer') {
-        // Computer answers (simulate always correct)
-        computerScore += points;
-        resultElem.textContent = `Computer answered correctly! (+${points} points)`;
-        resultElem.style.color = '#007bff';
-        resultElem.style.background = '#e0e7ff';
-        setTimeout(function () {
-            resultElem.style.background = '';
-            currentQuestionIndex++;
-            showQuestion();
-        }, 900);
-        return;
-    }
-    // Human answers
-    if (userAnswer === correctAnswer) {
-        totalPoints += points;
-        resultText = `Correct! (+${points} points)`;
-        speakResult = 'Correct!';
-        resultElem.style.color = '#28a745';
-        resultElem.style.background = '#eafbe7';
-        resultElem.textContent = resultText;
-        setTimeout(function () {
-            resultElem.style.background = '';
-        }, 1200);
-        speakText(speakResult, function () {
-            currentQuestionIndex++;
-            showQuestion();
-        });
-    } else {
-        if (questionInterrupted) {
-            totalPoints -= points;
-            resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
-        } else {
-            resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
-        }
-        resultElem.style.color = '#d9534f';
-        resultElem.style.background = '#fdeaea';
-        resultElem.textContent = resultText;
-        speakText('The correct answer is ' + questions[qIdx].answer, function () {
-            setTimeout(function () {
-                resultElem.style.background = '';
-                currentQuestionIndex++;
-                showQuestion();
-            }, 400);
-        });
-    }
+				// Save user answer for review
+				userAnswers[currentQuestionIndex] = {
+					question: questions[qIdx].question,
+					userAnswer: document.getElementById('answerInput').value,
+					correctAnswer: questions[qIdx].answer,
+					isCorrect: userAnswer === correctAnswer
+				};
+				if (humanVsComputerMode && buzzedBy === 'computer') {
+					// Computer answers (simulate always correct)
+					computerScore += points;
+					resultElem.textContent = `Computer answered correctly! (+${points} points)`;
+					resultElem.style.color = '#007bff';
+					resultElem.style.background = '#e0e7ff';
+					setTimeout(function () {
+						resultElem.style.background = '';
+						currentQuestionIndex++;
+						showQuestion();
+					}, 900);
+					return;
+				}
+				// Human answers
+				if (userAnswer === correctAnswer) {
+					totalPoints += points;
+					resultText = `Correct! (+${points} points)`;
+					speakResult = 'Correct!';
+					resultElem.style.color = '#28a745';
+					resultElem.style.background = '#eafbe7';
+					resultElem.textContent = resultText;
+					setTimeout(function () {
+						resultElem.style.background = '';
+					}, 1200);
+					speakText(speakResult, function () {
+						currentQuestionIndex++;
+						showQuestion();
+					});
+				} else {
+					if (questionInterrupted) {
+						totalPoints -= points;
+						resultText = `Wrong! Correct answer: ${questions[qIdx].answer} (-${points} points)`;
+					} else {
+						resultText = `Wrong! Correct answer: ${questions[qIdx].answer}`;
+					}
+					resultElem.style.color = '#d9534f';
+					resultElem.style.background = '#fdeaea';
+					resultElem.textContent = resultText;
+					speakText('The correct answer is ' + questions[qIdx].answer, function () {
+						setTimeout(function () {
+							resultElem.style.background = '';
+							currentQuestionIndex++;
+							showQuestion();
+						}, 400);
+					});
+				}
 			}
 
 			function endQuiz() {
-    document.getElementById('quizScreen').style.display = 'none';
-    document.getElementById('scoreScreen').style.display = '';
-    let scoreHtml = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
-    if (humanVsComputerMode) {
-        scoreHtml += `<p>Computer's total score: <b>${computerScore}</b> points.</p>`;
-        if (totalPoints > computerScore) {
-            scoreHtml += `<p style='color:#28a745;font-weight:bold;'>You win!</p>`;
-        } else if (totalPoints < computerScore) {
-            scoreHtml += `<p style='color:#007bff;font-weight:bold;'>Computer wins!</p>`;
-        } else {
-            scoreHtml += `<p style='color:#888;font-weight:bold;'>It's a tie!</p>`;
-        }
-    }
-    document.getElementById('scoreResult').innerHTML = scoreHtml;
+				document.getElementById('quizScreen').style.display = 'none';
+				document.getElementById('scoreScreen').style.display = '';
+				let scoreHtml = `<p>Well done, <b>${userName}</b>!</p><p>Your total score: <b>${totalPoints}</b> points.</p>`;
+				if (humanVsComputerMode) {
+					scoreHtml += `<p>Computer's total score: <b>${computerScore}</b> points.</p>`;
+					if (totalPoints > computerScore) {
+						scoreHtml += `<p style='color:#28a745;font-weight:bold;'>You win!</p>`;
+					} else if (totalPoints < computerScore) {
+						scoreHtml += `<p style='color:#007bff;font-weight:bold;'>Computer wins!</p>`;
+					} else {
+						scoreHtml += `<p style='color:#888;font-weight:bold;'>It's a tie!</p>`;
+					}
+				}
+				document.getElementById('scoreResult').innerHTML = scoreHtml;
 				// Review answers table
 				let reviewHtml = '<h3>Review Answers</h3><table style="width:100%;border-collapse:collapse;font-size:0.98em;">';
 				reviewHtml += '<tr style="background:#f4f4f4;"><th style="padding:6px;border:1px solid #ddd;">#</th><th style="padding:6px;border:1px solid #ddd;">Question</th><th style="padding:6px;border:1px solid #ddd;">Your Answer</th><th style="padding:6px;border:1px solid #ddd;">Correct Answer</th><th style="padding:6px;border:1px solid #ddd;">Result</th></tr>';
@@ -3162,55 +3176,55 @@ let buzzedBy = null; // 'human' or 'computer'
 					const unlock = new SpeechSynthesisUtterance("");
 					window.speechSynthesis.speak(unlock);
 				}
-    let modeVal = document.getElementById('modeSelect') ? document.getElementById('modeSelect').value : 'human';
-    humanVsComputerMode = modeVal === 'humancomputer';
-    computerScore = 0;
-    userName = nameVal;
-    document.getElementById('nameScreen').style.display = 'none';
-    document.getElementById('quizScreen').style.display = '';
-    document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal + (humanVsComputerMode ? ' vs Computer' : '');
-    currentQuestionIndex = 0;
-    totalPoints = 0;
-    questionOrder = shuffleQuestions();
-    userAnswers = [];
-    setMuteState(false);
-    playBgMusic();
-    setTimeout(showQuestion, 100);
+				let modeVal = document.getElementById('modeSelect') ? document.getElementById('modeSelect').value : 'human';
+				humanVsComputerMode = modeVal === 'humancomputer';
+				computerScore = 0;
+				userName = nameVal;
+				document.getElementById('nameScreen').style.display = 'none';
+				document.getElementById('quizScreen').style.display = '';
+				document.getElementById('mainTitle').textContent = 'Welcome ' + nameVal + (humanVsComputerMode ? ' vs Computer' : '');
+				currentQuestionIndex = 0;
+				totalPoints = 0;
+				questionOrder = shuffleQuestions();
+				userAnswers = [];
+				setMuteState(false);
+				playBgMusic();
+				setTimeout(showQuestion, 100);
 			}
 
 			document.getElementById('submitName').onclick = startQuiz;
 
 			document.getElementById('buzzBtn').onclick = function () {
-    if (!buzzed) {
-        buzzed = true;
-        buzzedBy = 'human';
-        preBuzzActive = false;
-        if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
-        if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
-        if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
-        document.getElementById('buzzBtn').textContent = 'Buzzed!';
-        document.getElementById('buzzBtn').classList.add('buzzed');
-        document.getElementById('answerInput').disabled = false;
-        document.getElementById('submitAnswer').disabled = false;
-        document.getElementById('recordBtn').disabled = false;
-        document.getElementById('answerInput').focus();
-        startTimer();
-        if (!questionRead) {
-            questionInterrupted = true;
-            if (speaking) {
-                if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    speakText('Question interrupted');
-                } else if (typeof typewriterInterval !== 'undefined' && typewriterInterval) {
-                    clearInterval(typewriterInterval);
-                    typewriterInterval = null;
-                    document.getElementById('questionCount').textContent = 'Question interrupted';
-                }
-            }
-        } else {
-            questionInterrupted = false;
-        }
-    }
+				if (!buzzed) {
+					buzzed = true;
+					buzzedBy = 'human';
+					preBuzzActive = false;
+					if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
+					if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
+					if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
+					document.getElementById('buzzBtn').textContent = 'Buzzed!';
+					document.getElementById('buzzBtn').classList.add('buzzed');
+					document.getElementById('answerInput').disabled = false;
+					document.getElementById('submitAnswer').disabled = false;
+					document.getElementById('recordBtn').disabled = false;
+					document.getElementById('answerInput').focus();
+					startTimer();
+					if (!questionRead) {
+						questionInterrupted = true;
+						if (speaking) {
+							if ('speechSynthesis' in window) {
+								window.speechSynthesis.cancel();
+								speakText('Question interrupted');
+							} else if (typeof typewriterInterval !== 'undefined' && typewriterInterval) {
+								clearInterval(typewriterInterval);
+								typewriterInterval = null;
+								document.getElementById('questionCount').textContent = 'Question interrupted';
+							}
+						}
+					} else {
+						questionInterrupted = false;
+					}
+				}
 			};
 
 			document.getElementById('submitAnswer').onclick = function () {
@@ -3278,42 +3292,90 @@ let buzzedBy = null; // 'human' or 'computer'
 				}
 			};
 
-    // --- Human vs Computer functions ---
-    function computerBuzzed() {
-        buzzed = true;
-        buzzedBy = 'computer';
-        preBuzzActive = false;
-        if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
-        if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
-        if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
-        document.getElementById('buzzBtn').disabled = true;
-        document.getElementById('buzzBtn').textContent = 'Computer Buzzed!';
-        document.getElementById('buzzBtn').style.background = '#007bff';
+// --- Human vs Computer functions ---
+function computerBuzzed() {
+    buzzed = true;
+    buzzedBy = 'computer';
+    preBuzzActive = false;
+    if (preBuzzTimer) { clearInterval(preBuzzTimer); preBuzzTimer = null; }
+    if (preBuzzTimeout) { clearTimeout(preBuzzTimeout); preBuzzTimeout = null; }
+    if (computerBuzzTimeout) { clearTimeout(computerBuzzTimeout); computerBuzzTimeout = null; }
+    document.getElementById('buzzBtn').disabled = true;
+    document.getElementById('buzzBtn').textContent = 'Computer Buzzed!';
+    document.getElementById('buzzBtn').style.background = '#007bff';
+    // Interrupt question reading if not finished
+    if (!questionRead) {
+        if (speaking && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+        if (typeof typewriterInterval !== 'undefined' && typewriterInterval) {
+            clearInterval(typewriterInterval);
+            typewriterInterval = null;
+        }
+        document.getElementById('questionCount').textContent = 'Interrupted by Computer';
+        speakText('Interrupted by Computer', function () {
+            setTimeout(function () {
+                computerAnswersQuestion(true); // interrupted
+            }, 600);
+        });
+    } else {
         document.getElementById('result').textContent = 'Computer buzzed first and is answering...';
         speakText('Question buzzed by Computer', function () {
-            let qIdx = questionOrder[currentQuestionIndex];
-            speakText('The correct answer is ' + questions[qIdx].answer, function () {
+            setTimeout(function () {
+                computerAnswersQuestion(false); // not interrupted
+            }, 600);
+        });
+    }
+}
+
+// Computer answers, with random chance of being wrong
+function computerAnswersQuestion(interrupted) {
+    let qIdx = questionOrder[currentQuestionIndex];
+    let points = questions[qIdx].points;
+    var resultElem = document.getElementById('result');
+    // 70% chance correct, 30% chance wrong
+    let isCorrect = Math.random() < 0.8;
+    let computerAnswer = isCorrect ? questions[qIdx].answer : '...'; // '...' as a wrong answer
+    // Save computer's answer for review
+    userAnswers[currentQuestionIndex] = {
+        question: questions[qIdx].question,
+        userAnswer: '[Computer] ' + computerAnswer,
+        correctAnswer: questions[qIdx].answer,
+        isCorrect: isCorrect
+    };
+    if (isCorrect) {
+        computerScore += points;
+        // Speak the computer's correct answer first
+        speakText('Computer says: ' + questions[qIdx].answer, function () {
+            resultElem.innerHTML = `<span style="font-style:italic;color:#5a32a3;">Computer Answer: Correct! (+${points} points)</span>`;
+            resultElem.style.background = '#e0e7ff';
+            speakText('Computer answered correctly', function () {
                 setTimeout(function () {
-                    computerAnswersQuestion();
-                }, 700);
+                    resultElem.style.background = '';
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 900);
+            });
+        });
+    } else {
+        // If interrupted, subtract points from computer
+        if (interrupted) {
+            computerScore -= points;
+        }
+        // Speak the computer's wrong answer (just '...' or a phrase)
+        speakText('Computer says: ...', function () {
+            resultElem.innerHTML = `<span style="font-style:italic;color:#a33232;">Computer Answer: Wrong! Correct answer: ${questions[qIdx].answer}${interrupted ? ` (-${points} points)` : ''}</span>`;
+            resultElem.style.background = '#fdeaea';
+            speakText('Computer answered wrong. The correct answer is ' + questions[qIdx].answer, function () {
+                setTimeout(function () {
+                    resultElem.style.background = '';
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 900);
             });
         });
     }
-
-    function computerAnswersQuestion() {
-        let qIdx = questionOrder[currentQuestionIndex];
-        let points = questions[qIdx].points;
-        computerScore += points;
-        var resultElem = document.getElementById('result');
-        resultElem.textContent = `Computer answered correctly! (+${points} points)`;
-        resultElem.style.color = '#007bff';
-        resultElem.style.background = '#e0e7ff';
-        setTimeout(function () {
-            resultElem.style.background = '';
-            currentQuestionIndex++;
-            showQuestion();
-        }, 900);
-    }
+}
 
 		});
 	</script>
@@ -3337,7 +3399,6 @@ let buzzedBy = null; // 'human' or 'computer'
 </body>
 
 </html>
-
 
 
 
