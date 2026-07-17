@@ -2841,7 +2841,7 @@
 					const j = Math.floor(Math.random() * (i + 1));
 					[arr[i], arr[j]] = [arr[j], arr[i]];
 				}
-				return arr.slice(0, 20);
+				return arr.slice(0, 5);
 			}
 
 			let userAnswers = [];
@@ -2851,13 +2851,13 @@
 			let preBuzzTimeout = null;
 			function showQuestion() {
 				// Progress bar update
-				var progress = ((currentQuestionIndex) / 20) * 100;
+				var progress = ((currentQuestionIndex) / 5) * 100;
 				document.getElementById('progressFill').style.width = progress + '%';
 				document.getElementById('answerError').style.display = 'none';
 				if (timer) resetTimer();
 				if (preBuzzTimer) clearInterval(preBuzzTimer);
 				if (preBuzzTimeout) clearTimeout(preBuzzTimeout);
-				if (currentQuestionIndex >= 20) {
+				if (currentQuestionIndex >= 5) {
 					endQuiz();
 					return;
 				}
